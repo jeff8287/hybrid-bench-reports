@@ -6,7 +6,8 @@ Public HTML reports for the [hybrid-bench](https://github.com/jeff8287/hybrid-be
 
 | Date | Report | Description |
 |------|--------|-------------|
-| 2026-05-12 | **[Phase 1 Final Report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_1_FINAL_REPORT.html)** | Phase 1 종료 — `bpd.auto_ratio.predict_ratio()` API 출시. 32 APIs, K=4 hybrid, LOOCV 81% 통과. |
+| 2026-05-12 | [**Phase 1 Final**](https://jeff8287.github.io/hybrid-bench-reports/PHASE_1_FINAL_REPORT.html) | Phase 1 종료 — `bpd.auto_ratio.predict_ratio()` API 출시. 32 APIs, K=4 hybrid, LOOCV 81% 통과. |
+| 2026-05-12 | [Stage 8 Validation](https://jeff8287.github.io/hybrid-bench-reports/STAGE_8_VALIDATION_REPORT.html) | predict_ratio() overhead < 0.003%, realized speedup 4.79x mean, 87% APIs ≥ 3x. |
 | 2026-05-12 | [Phase A Public Report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_PUBLIC_REPORT.html) | Phase A 측정 결과 — 32 APIs × 2 SFs contention grid (38h), 4 작업 유형 분류, Codex 가설 검증 (43%→81%). |
 
 ## Method
