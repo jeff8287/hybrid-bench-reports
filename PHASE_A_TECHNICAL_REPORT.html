@@ -1,0 +1,2026 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase A Technical Report</title>
+<style>
+:root {
+    --bg: #fafbfc;
+    --fg: #24292e;
+    --accent: #0366d6;
+    --accent-soft: #dbedff;
+    --muted: #586069;
+    --border: #e1e4e8;
+    --code-bg: #f6f8fa;
+    --highlight: #fff8c4;
+    --table-stripe: #f6f8fa;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+                 "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.65;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+header.hero {
+    background: linear-gradient(135deg, #0366d6 0%, #044289 100%);
+    color: white;
+    padding: 48px 24px;
+    margin: -40px -24px 32px;
+}
+header.hero h1 {
+    margin: 0;
+    font-size: 2.4rem;
+    line-height: 1.2;
+}
+header.hero .tagline {
+    margin-top: 12px;
+    font-size: 1.15rem;
+    opacity: 0.95;
+}
+header.hero .meta {
+    margin-top: 16px;
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+h1, h2, h3, h4 {
+    color: var(--fg);
+    font-weight: 600;
+    line-height: 1.3;
+}
+h2 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-top: 48px;
+}
+h3 { margin-top: 32px; }
+p { margin: 12px 0; }
+ul, ol { padding-left: 24px; }
+li { margin: 4px 0; }
+strong { color: #0366d6; }
+em { color: var(--muted); font-style: italic; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace;
+    font-size: 0.92em;
+}
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-size: 0.88em;
+    line-height: 1.5;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.94em;
+}
+th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+}
+th {
+    background: var(--accent-soft);
+    font-weight: 600;
+}
+tr:nth-child(even) td { background: var(--table-stripe); }
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: block;
+    margin: 20px auto;
+}
+blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+}
+.callout {
+    background: var(--highlight);
+    border-left: 4px solid #d4a72c;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+}
+.toc {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 24px;
+    margin: 24px 0 32px;
+}
+.toc h2 { margin-top: 0; border: 0; padding: 0; font-size: 1.1rem; }
+.toc ul { padding-left: 20px; margin: 8px 0; }
+.toc li { margin: 2px 0; }
+.toc a { color: var(--fg); }
+.toc a:hover { color: var(--accent); }
+hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.88em;
+    text-align: center;
+}
+@media (max-width: 600px) {
+    header.hero h1 { font-size: 1.7rem; }
+    .container { padding: 24px 16px 48px; }
+    header.hero { padding: 28px 16px; margin: -24px -16px 24px; }
+    table { font-size: 0.85em; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header class="hero">
+  <h1>Phase A Technical Report</h1>
+  <div class="tagline">예측 모델 / Contention / Feature Engineering 종합 — 32 APIs, 49h, LOOCV 81% (in-distribution only)</div>
+  <div class="meta">생성일: 2026-05-13 · 자동 빌드 (publish-report-html)</div>
+</header>
+<nav class="toc"><h2>목차</h2><ul>
+<li><a href="#0-executive-summary">0. Executive Summary</a></li>
+  <li><a href="#01-무엇을-만들었나">0.1 무엇을 만들었나</a></li>
+  <li><a href="#02-핵심-발견">0.2 핵심 발견</a></li>
+  <li><a href="#03-한계-정직한-보고-반드시-72-와-함께-읽을-것">0.3 한계 (정직한 보고) — 반드시 §7.2 와 함께 읽을 것</a></li>
+<li><a href="#1-연구-목표와-가설">1. 연구 목표와 가설</a></li>
+  <li><a href="#11-풀려는-문제">1.1 풀려는 문제</a></li>
+  <li><a href="#12-가설">1.2 가설</a></li>
+  <li><a href="#13-goal-vs-non-goal">1.3 Goal vs Non-goal</a></li>
+<li><a href="#2-실험-환경">2. 실험 환경</a></li>
+  <li><a href="#21-하드웨어">2.1 하드웨어</a></li>
+  <li><a href="#22-소프트웨어-스택">2.2 소프트웨어 스택</a></li>
+  <li><a href="#23-측정-인프라">2.3 측정 인프라</a></li>
+<li><a href="#3-워크로드-설계-32-apis">3. 워크로드 설계: 32 APIs</a></li>
+  <li><a href="#31-선정-기준">3.1 선정 기준</a></li>
+  <li><a href="#32-32-apis-전체-명세">3.2 32 APIs 전체 명세</a></li>
+  <li><a href="#33-핵심-설계-결정">3.3 핵심 설계 결정</a></li>
+<li><a href="#4-실험-절차-stage-00-08">4. 실험 절차 (Stage 00 ~ 08)</a></li>
+  <li><a href="#41-stage-00-tpc-h-데이터-준비">4.1 Stage 00 — TPC-H 데이터 준비</a></li>
+  <li><a href="#42-stage-01-smoke-harness">4.2 Stage 01 — Smoke Harness</a></li>
+  <li><a href="#43-stage-02-static-feature-extraction">4.3 Stage 02 — Static Feature Extraction</a></li>
+  <li><a href="#44-stage-03-p1e1-calibration">4.4 Stage 03 — P1/E1 Calibration</a></li>
+  <li><a href="#45-stage-04-contention-grid-phase-a-의-핵심">4.5 Stage 04 — Contention Grid (Phase A 의 핵심)</a></li>
+  <li><a href="#46-stage-05-categorization-clustering">4.6 Stage 05 — Categorization (Clustering)</a></li>
+  <li><a href="#47-stage-06-cluster-regression">4.7 Stage 06 — Cluster Regression</a></li>
+  <li><a href="#48-stage-07-loocv-cross-validation">4.8 Stage 07 — LOOCV Cross-Validation</a></li>
+  <li><a href="#49-stage-08-public-api-packaging">4.9 Stage 08 — Public API Packaging</a></li>
+<li><a href="#5-feature-engineering-상세">5. Feature Engineering 상세</a></li>
+  <li><a href="#50-feature-engineering-이란-intuition">5.0 Feature engineering 이란 (intuition)</a></li>
+  <li><a href="#51-gen-1-정적-static-feature">5.1 Gen 1 — 정적 (static) feature</a></li>
+  <li><a href="#52-gen-2-calibrated-feature-raw_pe_ratio">5.2 Gen 2 — Calibrated feature (raw_pe_ratio)</a></li>
+  <li><a href="#53-gen-3-curve-shape-feature-32-apis">5.3 Gen 3 — Curve-shape feature (32 APIs)</a></li>
+  <li><a href="#54-미사용-feature-왜-안-썼나">5.4 미사용 feature (왜 안 썼나)</a></li>
+  <li><a href="#55-feature-engineering-의-핵심-5가지-발견">5.5 Feature engineering 의 핵심 5가지 발견</a></li>
+<li><a href="#6-contention-모델링">6. Contention 모델링</a></li>
+  <li><a href="#61-lunar-lake-lpi-의-아키텍처적-사실">6.1 Lunar Lake LPI 의 아키텍처적 사실</a></li>
+  <li><a href="#62-γ-cross-cluster-interference-proxy">6.2 γ — Cross-Cluster Interference Proxy</a></li>
+  <li><a href="#63-anti-scaling-발견">6.3 Anti-Scaling 발견</a></li>
+  <li><a href="#64-sf5-cache-pressure-effect">6.4 SF=5 Cache Pressure Effect</a></li>
+<li><a href="#7-예측-모델">7. 예측 모델</a></li>
+  <li><a href="#71-최종-k4-hybrid-모델">7.1 최종 K=4 + Hybrid 모델</a></li>
+  <li><a href="#72-validation-그리고-그-한계의-정직한-분석">7.2 Validation — 그리고 그 한계의 정직한 분석</a></li>
+  <li><a href="#73-결론-무엇을-검증했고-무엇은-안-했나">7.3 결론: 무엇을 검증했고 무엇은 안 했나</a></li>
+<li><a href="#8-한계와-향후-과제">8. 한계와 향후 과제</a></li>
+  <li><a href="#81-측정-한계">8.1 측정 한계</a></li>
+  <li><a href="#82-모델링-한계">8.2 모델링 한계</a></li>
+  <li><a href="#83-feature-engineering-한계">8.3 Feature engineering 한계</a></li>
+  <li><a href="#84-end-to-end-미검증">8.4 End-to-End 미검증</a></li>
+<li><a href="#9-결론">9. 결론</a></li>
+  <li><a href="#91-phase-a-가-증명한-것">9.1 Phase A 가 증명한 것</a></li>
+  <li><a href="#92-phase-a-가-증명하지-못한-것">9.2 Phase A 가 증명하지 못한 것</a></li>
+  <li><a href="#93-phase-b의-우선순위">9.3 Phase B의 우선순위</a></li>
+  <li><a href="#94-산출물-인덱스">9.4 산출물 인덱스</a></li>
+<li><a href="#10-references">10. References</a></li>
+  <li><a href="#101-internal-artifacts">10.1 Internal artifacts</a></li>
+  <li><a href="#102-survey-외부-참고-paper-claim-시-인용">10.2 Survey 외부 참고 (paper claim 시 인용)</a></li>
+  <li><a href="#103-architectural-context">10.3 Architectural context</a></li>
+</ul></nav>
+<main>
+<h1 id="phase-a-contention-feature-engineering">Phase A — 예측 모델 / Contention / Feature Engineering 종합 기술 리포트</h1>
+<p><strong>작성일</strong>: 2026-05-13
+<strong>대상</strong>: bpd (Balanced Pandas) Phase A 전체 (Stage 00 ~ 08)
+<strong>프로젝트</strong>: Intel Lunar Lake hybrid CPU 환경에서 pandas API 별 P/E ratio 자동 추천 모델
+<strong>총 측정 데이터</strong>: 49h wall, 22,464 trials (warmup 포함), 32 workloads × 24 cells × {SF=1, 2, 5 부분}</p>
+<hr />
+<h2 id="0-executive-summary">0. Executive Summary</h2>
+<h3 id="01">0.1 무엇을 만들었나</h3>
+<ul>
+<li><strong>공개 API</strong>: <code>bpd.auto_ratio.predict_ratio(workload, sample_df)</code> — pandas operator 이름과 데이터 샘플을 입력 받아 <strong>추천 P/E 코어 비율</strong> + cluster label + outlier 플래그를 반환</li>
+<li><strong>모델 구조</strong>: K=4 K-means cluster + 2 per-API outlier (hybrid)</li>
+<li><strong>정확도</strong>: LOOCV 81% (26/32 통과 ≤ 15% MAPE), mean MAPE 11.4%</li>
+<li><strong>실현 speedup</strong>: 32 APIs 평균 4.79x (P1 baseline 대비, model 추천 cell 적용 시)</li>
+</ul>
+<h3 id="02">0.2 핵심 발견</h3>
+<ol>
+<li><strong>Curve-shape feature</strong> (스칼라 PE ratio가 아닌 scaling exponent α, β, γ)이 <strong>point feature</strong>보다 cluster 분리축으로 결정적으로 우월. 동일 클러스터링 알고리즘으로 LOOCV 43% → 81% 향상.</li>
+<li><strong>데이터 부족(8 APIs)이 일반화 실패의 근본 원인</strong>. 32 APIs 확장 후 cluster boundary 명확. 측정 데이터가 부족하면 어떤 알고리즘으로도 일반화 불가능.</li>
+<li>Lunar Lake P/E의 cross-cluster contention은 <strong>LLC가 아닌 DRAM bandwidth</strong>에서 발생 (P-cluster ↔ E-cluster L3 미공유). γ는 이 단일 scalar interference를 capture.</li>
+<li><strong>Anti-scaling outlier</strong> 존재 (groupby_agg_int_key, α=-0.34): single core에서 가장 빠름. 모든 power-law cluster model로 fit 불가능 → per-API fallback 필수.</li>
+<li><strong>IO-bound outlier</strong> 존재 (read_parquet_full, α=0.23): hash-bound cluster와 같은 곡선 모양이지만 다른 physics → per-API fallback.</li>
+</ol>
+<h3 id="03-72">0.3 한계 (정직한 보고) — <em>반드시 §7.2 와 함께 읽을 것</em></h3>
+<ul>
+<li><strong>⚠️ LOOCV 는 in-distribution generalization 만 검증</strong>: 32 APIs 모두 TPC-H family. 한 개 빼서 나머지 31 개로 예측 → "쉬운 거에서 몇 개 안 보이게 한 것". <strong>진정한 unseen API (df.pivot, df.rolling, df.cumsum 등) 일반화는 미검증</strong>. 자세한 분석은 §7.2.2 ~ §7.3.</li>
+<li><strong>Co-run interference 미측정</strong>: 현재 γ는 single workload의 P/E 동시 실행 시 contention만 capture. operator A와 B를 <em>동시에</em> 실행 시 cross-op interference는 별도 grid 측정 필요 → Phase B.</li>
+<li><strong>VTune memory features 미통합</strong>: FW-6b에서 8 APIs DRAM BW/memory-bound %는 측정했으나 clustering input 아님 (informational only). 32 APIs 확장 + correlation check 후 통합 결정 필요.</li>
+<li><strong>End-to-end TPC-H query 검증 부재</strong>: per-operator 측정만 완료. TPC-H Q1-Q22 end-to-end 실행 시 모델 추천이 작동하는지 미확인.</li>
+<li><strong>단일 하드웨어</strong>: Lunar Lake (Core Ultra 7 256V) 만. Arrow Lake / Raptor Lake / Sapphire Rapids 미검증.</li>
+</ul>
+<hr />
+<h2 id="1">1. 연구 목표와 가설</h2>
+<h3 id="11">1.1 풀려는 문제</h3>
+<ul>
+<li>Intel hybrid CPU (P-core + E-core)에서 pandas API를 병렬화할 때, P와 E에 <strong>얼마나 다르게 데이터를 분배해야 최적인가</strong>?</li>
+<li>단순 균등 분배 (PE ratio = 1.0) 는 P-core가 늘 idle 또는 E-core가 늘 bottleneck — 비효율.</li>
+<li><strong>이상적인 PE ratio는 워크로드, dtype, 데이터 크기에 따라 다름</strong> — 어떻게 자동으로 결정할 수 있나?</li>
+</ul>
+<h3 id="12">1.2 가설</h3>
+<ul>
+<li><strong>H1 (intra-op clustering)</strong>: pandas operator는 P/E scaling 거동에 따라 작은 수의 cluster로 자연 분리되며, cluster별 단일 (α, β, γ) coefficient로 새 API를 일반화 가능하다.</li>
+<li><strong>H2 (offline + sample-online)</strong>: cluster 결정은 offline 측정으로, 데이터-스케일은 sample_df에서 online 추론 가능하다.</li>
+<li><strong>H3 (Lunar Lake LPI contention model)</strong>: P/E cross-cluster contention은 DRAM bandwidth 공유에서 옴 (L3 미공유). 따라서 single scalar γ로 capture 가능하다.</li>
+</ul>
+<h3 id="13-goal-vs-non-goal">1.3 Goal vs Non-goal</h3>
+<p><strong>Goal (Phase A)</strong>:
+- 32 pandas APIs (TPC-H + 보조)에 대해 per-API PE ratio 추천 모델 구축
+- Cluster-based 일반화 (LOOCV)
+- bpd 라이브러리 공개 API</p>
+<p><strong>Non-goal (Phase A)</strong>:
+- Inter-op parallelization (독립적 op들의 코어 할당) — Phase B
+- Co-run interference (op A와 op B 동시 실행 시 slowdown) — Phase B
+- TPC-H end-to-end query 실행 검증 — Tier 4
+- pandas 외 backend (polars/modin) — out of scope</p>
+<hr />
+<h2 id="2">2. 실험 환경</h2>
+<h3 id="21">2.1 하드웨어</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU</td>
+<td>Intel Core Ultra 7 256V (Lunar Lake)</td>
+</tr>
+<tr>
+<td>P-core</td>
+<td>4× Lion Cove @ ~5.0 GHz (cores 0-3)</td>
+</tr>
+<tr>
+<td>E-core</td>
+<td>4× Skymont @ ~3.7 GHz (cores 4-7) <strong>in Low Power Island</strong></td>
+</tr>
+<tr>
+<td>HyperThreading</td>
+<td>없음 (logical = physical = 8 cores)</td>
+</tr>
+<tr>
+<td>L1 cache</td>
+<td>P: 48 KB I + 48 KB D / E: 64 KB I + 32 KB D</td>
+</tr>
+<tr>
+<td>L2 cache</td>
+<td>P-cluster: 2.5 MB × 4 / E-cluster: 4 MB shared</td>
+</tr>
+<tr>
+<td>L3 cache</td>
+<td><strong>P-cluster only</strong>: 12 MB. E-cluster는 LPI에 있어 L3 미공유.</td>
+</tr>
+<tr>
+<td>DRAM</td>
+<td>16 GB LPDDR5x-8533, on-package, ~129 GB/s 이론 BW</td>
+</tr>
+<tr>
+<td>Memory controller</td>
+<td><strong>단일 컨트롤러를 P/E 모두 공유</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>핵심 아키텍처적 사실</strong> (서베이로 확인):
+- P-cluster와 E-cluster는 <strong>L3를 공유하지 않음</strong> → 고전 WCET shared-cache contention 모델 (Yan &amp; Zhang RTAS'08) 직접 적용 불가
+- 두 cluster의 cross-interference는 <strong>DRAM bandwidth 공유</strong>에서 발생 → MemGuard (RTAS'13), Bandwidth Bandit (CGO'13), PCCS (MICRO'21) 의 모델링 영역</p>
+<h3 id="22">2.2 소프트웨어 스택</h3>
+<table>
+<thead>
+<tr>
+<th>환경</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OS</td>
+<td>Windows 11</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>3.14.3 (free-threaded, nogil — cp314t)</td>
+</tr>
+<tr>
+<td>pandas</td>
+<td>3.0.1</td>
+</tr>
+<tr>
+<td>pyarrow</td>
+<td>23.0.1</td>
+</tr>
+<tr>
+<td>numpy</td>
+<td>2.4.3</td>
+</tr>
+<tr>
+<td>측정 도구</td>
+<td>psutil 7.2.2 (CPU 모니터링), Windows PDH API (RAPL 전력), Intel VTune 2025.0 (memory profiling)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 nogil Python?</strong>
+- pandas 3.0+에서 GIL release 가능 — 워커 subprocess 내부에서 single-thread 강제 시 thread context overhead 최소화
+- pyarrow Arrow IPC transport와 호환성 확보</p>
+<h3 id="23">2.3 측정 인프라</h3>
+<h4 id="231-4-layer-cpu-affinity-lockdown">2.3.1 4-layer CPU Affinity Lockdown</h4>
+<p>각 워커 subprocess는 다음 순서로 affinity 적용:</p>
+<ol>
+<li><strong>환경변수</strong> (subprocess spawn 전): <code>POLARS_MAX_THREADS=1</code>, <code>OMP_NUM_THREADS=1</code>, <code>MKL_NUM_THREADS=1</code>, <code>OPENBLAS_NUM_THREADS=1</code></li>
+<li><strong>pyarrow runtime</strong>: <code>pyarrow.set_cpu_count(1)</code> (워커 entry point 시작)</li>
+<li><strong>Windows process affinity</strong>: <code>SetProcessAffinityMask()</code> ctypes → 지정 코어만 사용</li>
+<li><strong>OS thread affinity</strong>: 메인 thread를 affinity mask로 묶음</li>
+</ol>
+<p>→ 단일 core에서 한 subprocess 가 다른 core로 migrate 되지 않음. PMU 측정 보장.</p>
+<h4 id="232-bpdrecycle-process-state-drift">2.3.2 bpd.recycle — Process-State Drift 방지</h4>
+<p><code>dev/260403_rowwise_read_io/06-vtune-profiling/</code> 에서 관찰된 현상:
+- 동일 워크로드 (pandas read_csv 10GB)를 한 process 에서 15 trials 연속 실행 → wall time <strong>+39% 누적 inflation</strong>
+- 매 trial을 fresh subprocess 로 실행 시 → drift ~0%
+- 원인: pandas/numpy heap fragmentation + buffer cache 누적</p>
+<p><code>bpd.recycle.run_trials()</code> 의 핵심:
+- 매 trial 마다 <strong>새 Python interpreter subprocess</strong> 생성
+- subprocess 내부에서 pandas import 부터 새로 (warm cache 의도적 회피)
+- inter_trial_sleep = 2.0s (DRAM cooldown)
+- 13 reps = 3 warmup + 10 measured</p>
+<h4 id="233-cpu-affinity">2.3.3 CPU Affinity 검증</h4>
+<p>매 trial 종료 시:
+- <code>psutil.cpu_percent(percpu=True)</code> 0.1초 간격 샘플링
+- 각 core 의 avg/max 계산
+- <strong>target core avg &gt; 50% AND non-target core avg &lt; 10%</strong> → PASS
+- FAIL 시 해당 trial 폐기 + 재측정</p>
+<h4 id="234-ac-04-verdict">2.3.4 결과 안정성 (AC-04 verdict)</h4>
+<p>Stage 4 전체:
+- 19,968 measured trials
+- 7,635 unique PIDs (subprocess recycling 정상)
+- <strong>0 affinity match fails</strong>
+- <strong>0 duckdb violations</strong> (no duckdb leaked into measurement)
+- <strong>0 cell hash disagreements</strong>
+- <strong>0 error trials</strong> (timeout 600s 적용 후)</p>
+<hr />
+<h2 id="3-32-apis">3. 워크로드 설계: 32 APIs</h2>
+<h3 id="31">3.1 선정 기준</h3>
+<ul>
+<li><strong>TPC-H 쿼리에서 등장하는 pandas API</strong> 만 + dtype variant 포함</li>
+<li>dtype: int64, decimal128, date32, varchar (TPC-H 4 dtype family 모두 커버)</li>
+<li>데이터 크기: SF=1 (~6M rows lineitem), SF=2 (~12M), SF=5 (~30M) — cache pressure 단계</li>
+<li>외부 lookup: orders.parquet, customer.parquet, partsupp.parquet (TPC-H 표준)</li>
+</ul>
+<h3 id="32-32-apis">3.2 32 APIs 전체 명세</h3>
+<p>소스: <code>bpd/ops/tpch_ops.py</code>. 모든 워크로드는 TPC-H lineitem 테이블의 partition 을 입력으로 받음 (단, IO 워크로드는 파일 경로 받음).</p>
+<h4 id="321-filter-family-6-row-selection">3.2.1 Filter family (6) — 행 선택 (row selection)</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>dtype 특성</th>
+<th>TPC-H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>filter</code></td>
+<td><code>df[df['l_shipdate'] &lt;= '1998-09-02']</code> — 단일 date 컬럼 비교</td>
+<td>date32[day]</td>
+<td>q1</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>between_filter</code></td>
+<td>3-AND: date BETWEEN + decimal BETWEEN + numeric <code>&lt;</code></td>
+<td>date + decimal + int</td>
+<td>q6</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>isin_filter</code></td>
+<td><code>df[df['l_shipmode'].isin(['AIR','REG AIR','SHIP','TRUCK'])]</code> — 4-value membership</td>
+<td>varchar</td>
+<td>q12</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>multi_cond_filter</code></td>
+<td>3-AND on 3 different columns (date + decimal + int)</td>
+<td>mixed</td>
+<td>q6</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>filter_decimal</code></td>
+<td><code>df[df['l_quantity'] &gt; 25]</code> — 단일 decimal128 비교</td>
+<td>decimal128</td>
+<td>q6 부분</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>filter_string_eq</code></td>
+<td><code>df[df['l_shipmode'] == 'AIR']</code> — 단일 varchar equality</td>
+<td>varchar</td>
+<td>q19/q12 부분</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 6개?</strong>: 같은 "filter" semantic 이라도 dtype 따라 비교 비용이 매우 다름 (int &lt; date &lt; decimal &lt; varchar). cluster boundary 가 dtype 에 의존하는지 검증.</p>
+<h4 id="322-groupby-family-6">3.2.2 Groupby family (6) — 키별 집계</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>그룹 cardinality</th>
+<th>TPC-H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td><code>groupby_single_key_string</code></td>
+<td><code>groupby('l_returnflag').agg(sum, mean, max)</code></td>
+<td>~3 그룹</td>
+<td>q5 form</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>groupby_count</code></td>
+<td><code>groupby('l_shipmode').size()</code></td>
+<td>~7 그룹</td>
+<td>q4 form</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>groupby_nunique</code></td>
+<td><code>groupby(['l_returnflag','l_linestatus']).l_orderkey.nunique()</code></td>
+<td>~4 그룹 × distinct 카운트</td>
+<td>q16 form</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>groupby_min_max</code></td>
+<td><code>groupby('l_returnflag').agg(min='l_discount', max='l_discount')</code></td>
+<td>~3 그룹</td>
+<td>q15 form</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>groupby_agg</code></td>
+<td><code>groupby(['l_returnflag','l_linestatus']).agg(sum_qty, sum_price, count, max)</code> — q1 표준</td>
+<td>~4 그룹</td>
+<td>q1</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>groupby_agg_int_key</code> ⚠️</td>
+<td><code>groupby('l_partkey').agg(...)</code> — <strong>200,000 그룹</strong> (= L3 초과)</td>
+<td>~200K 그룹</td>
+<td>q11/q15 form</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 6개?</strong>: 그룹 cardinality 가 hash table 크기를 결정. low cardinality (3-7 그룹) 은 L1 fit, high cardinality (200K 그룹) 은 L3 초과 → 다른 contention regime. groupby_agg_int_key 는 <strong>anti-scaling outlier</strong> 의 발견 케이스.</p>
+<h4 id="323-merge-family-5-join">3.2.3 Merge family (5) — 두 테이블 join</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>hash table 크기</th>
+<th>TPC-H</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>13</td>
+<td><code>merge_inner_singlekey</code></td>
+<td><code>df.merge(orders, on='l_orderkey', how='inner')</code></td>
+<td>orders 0.18 GB</td>
+<td>q3/q4</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>merge_inner_multikey</code></td>
+<td><code>df.merge(partsupp, on=['l_partkey','l_suppkey'], how='inner')</code></td>
+<td>partsupp 0.03 GB</td>
+<td>q5 form</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>merge_left_outer</code></td>
+<td><code>df.merge(orders, on='l_orderkey', how='left')</code></td>
+<td>같음 + NULL 처리</td>
+<td>q13 form</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>merge_anti</code></td>
+<td><code>df where l_orderkey NOT IN orders</code> (indicator merge + filter)</td>
+<td>같음</td>
+<td>q22 form</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>merge_chain_3tables</code></td>
+<td><code>df ⋈ orders ⋈ orders</code> (3-table chain)</td>
+<td>누적 큼</td>
+<td>q3/q5 form</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 5개?</strong>: hash table 크기 + key complexity (single int vs composite) + join semantic (inner / left / anti / chain) 각자 다른 contention 패턴.</p>
+<h4 id="324-sort-family-3">3.2.4 Sort family (3) — 정렬</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>sort 비용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>18</td>
+<td><code>sort_values_multikey_mixed</code></td>
+<td>3개 컬럼 sort, mixed asc/desc, <strong>다른 dtype</strong> (decimal/decimal/int)</td>
+<td>가장 비싼</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>sort_descending</code></td>
+<td>단일 decimal 컬럼 sort descending</td>
+<td>중간</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>multi_column_sort_pure</code></td>
+<td>2개 컬럼 sort, <strong>같은 dtype</strong> (varchar/varchar)</td>
+<td>중간</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 3개?</strong>: sort 자체는 algorithmic cost dominant. dtype 동일성 (pure-string) vs mixed 의 compare cost 차이 + 정렬 컬럼 수 차이.</p>
+<h4 id="325-datetime-family-3">3.2.5 DateTime family (3) — 날짜 추출</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>21</td>
+<td><code>dt_year</code></td>
+<td><code>df['l_shipdate'].dt.year</code> 새 컬럼 추가</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>dt_month</code></td>
+<td><code>df['l_shipdate'].dt.month</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>dt_day</code></td>
+<td><code>df['l_shipdate'].dt.day</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 3개?</strong>: pyarrow datetime extraction 의 SIMD path 가 year/month/day 모두 동일한지 검증. (결과: 모두 동일 cluster C1 → SIMD 분기 차이 없음)</p>
+<h4 id="326-string-family-4">3.2.6 String family (4) — 문자열 처리</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>비교 비용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>24</td>
+<td><code>str_contains</code></td>
+<td><code>df['l_comment'].str.contains('green')</code> — substring search</td>
+<td>가장 비싼 (Boyer-Moore)</td>
+</tr>
+<tr>
+<td>25</td>
+<td><code>str_substring</code></td>
+<td><code>df['l_shipinstruct'].str.slice(0, 2)</code> — fixed extraction</td>
+<td>저렴 (memcpy)</td>
+</tr>
+<tr>
+<td>26</td>
+<td><code>str_startswith</code></td>
+<td><code>df['l_shipmode'].str.startswith('AIR')</code> — prefix match</td>
+<td>중간 (memcmp first N bytes)</td>
+</tr>
+<tr>
+<td>27</td>
+<td><code>str_endswith</code></td>
+<td><code>df['l_shipmode'].str.endswith('AIR')</code> — suffix match</td>
+<td>중간</td>
+</tr>
+</tbody>
+</table>
+<h4 id="327-casewhen-family-3">3.2.7 CaseWhen family (3) — 조건부 표현식</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+<th>input dtype</th>
+<th>output dtype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>28</td>
+<td><code>case_when</code></td>
+<td><code>CASE WHEN startswith('PROMO') THEN price*(1-disc) ELSE 0</code></td>
+<td>varchar</td>
+<td>decimal</td>
+</tr>
+<tr>
+<td>29</td>
+<td><code>case_when_int_input</code></td>
+<td><code>CASE WHEN year(date)=1995 THEN price*(1-disc) ELSE 0</code></td>
+<td>int (from date)</td>
+<td>decimal</td>
+</tr>
+<tr>
+<td>30</td>
+<td><code>case_when_string_output</code></td>
+<td><code>CASE WHEN startswith('AIR') THEN 'high' ELSE 'low'</code></td>
+<td>varchar</td>
+<td>varchar</td>
+</tr>
+</tbody>
+</table>
+<p><strong>왜 3개?</strong>: case_when 의 input dtype 과 output materialization dtype 이 cluster 영향 주는지 검증.</p>
+<h4 id="328-columnarith-1">3.2.8 ColumnArith (1) — 벡터 산술</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>31</td>
+<td><code>column_arith</code></td>
+<td><code>df['disc_price'] = df['l_extendedprice'] * (1.0 - df['l_discount'])</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>가장 simple 한 vectorizable operation</strong>. cluster C1 의 prototype.</p>
+<h4 id="329-io-2-1-read_parquet_col">3.2.9 IO (2 + 1 read_parquet_col 미측정)</h4>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>API</th>
+<th>하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td><code>read_csv</code></td>
+<td>row-range subset 으로 lineitem.csv chunk 읽기 + pyarrow CSV parser</td>
+</tr>
+<tr>
+<td>33</td>
+<td><code>read_parquet_full</code> ⚠️</td>
+<td>row-group subset 으로 lineitem.parquet 전체 schema 읽기</td>
+</tr>
+<tr>
+<td>-</td>
+<td><code>read_parquet_col</code></td>
+<td>row-group + column subset (q1-style narrow read) — Phase A 측정 안 함</td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ 표시 (groupby_agg_int_key, read_parquet_full): Phase A 분석 후 <strong>outlier</strong> 로 발견된 두 API. cluster model 적용 불가 → per-API fallback.</p>
+<h3 id="33">3.3 핵심 설계 결정</h3>
+<h4 id="331-dtype-variant">3.3.1 dtype variant 포함</h4>
+<p>이유: 같은 algorithmic structure 라도 dtype에 따라 cost가 다름.
+- <strong>filter_decimal</strong>: decimal128 비교 (vs filter: int64) — VECTOR_CMP_EQ 비용 ~3x
+- <strong>filter_string_eq</strong>: varchar <code>==</code> (vs filter: int64) — column-level string compare
+- <strong>case_when_int_input</strong> vs <strong>case_when</strong>: input dtype 차이
+- <strong>case_when_string_output</strong>: result dtype 차이 (output materialization 비용)</p>
+<p>→ 6 filter variants → cluster내 dtype-induced variation 검증</p>
+<h4 id="332-cardinality-variant">3.3.2 cardinality variant 포함</h4>
+<ul>
+<li><strong>groupby_agg</strong>: l_orderkey (~1.5M groups, low cardinality per group)</li>
+<li><strong>groupby_agg_int_key</strong>: l_partkey (~200K groups, mid cardinality)</li>
+<li><strong>groupby_count</strong> / <strong>groupby_nunique</strong> / <strong>groupby_min_max</strong>: 다른 aggregation operator</li>
+</ul>
+<p>→ cardinality 차이가 cluster boundary 흔드는지 검증 (결과: groupby_agg_int_key가 outlier 됨, 그 외는 모두 C1 linear)</p>
+<h4 id="333-join-variant">3.3.3 join 복잡도 variant</h4>
+<ul>
+<li><strong>merge_inner_singlekey</strong>: l_orderkey (lineitem ⋈ orders)</li>
+<li><strong>merge_inner_multikey</strong>: (l_partkey, l_suppkey) ⋈ partsupp (composite key)</li>
+<li><strong>merge_left_outer</strong>: NULL-handling overhead</li>
+<li><strong>merge_anti</strong>: filter via anti-join</li>
+<li><strong>merge_chain_3tables</strong>: 2-stage join (lineitem ⋈ orders ⋈ customer)</li>
+</ul>
+<p>→ hash table 크기, key compare cost, multi-stage pipeline 효과 cover</p>
+<hr />
+<h2 id="4-stage-00-08">4. 실험 절차 (Stage 00 ~ 08)</h2>
+<h3 id="41-stage-00-tpc-h">4.1 Stage 00 — TPC-H 데이터 준비</h3>
+<ul>
+<li>TPC-H <strong>PDS-H</strong> (DuckDB의 TPC-H variant) 사용</li>
+<li>SF=1, 2, 5 parquet 생성</li>
+<li>8 tables: lineitem, orders, customer, supplier, part, partsupp, nation, region</li>
+<li>lineitem 크기: SF=1 = 6,001,215 rows, SF=2 = 11,997,996, SF=5 = 29,999,795</li>
+<li><strong><code>bpd.ops.tpch_ops</code></strong> 모듈: 모든 32 worker functions + dispatch + merge strategies</li>
+</ul>
+<h3 id="42-stage-01-smoke-harness">4.2 Stage 01 — Smoke Harness</h3>
+<p>목적: 측정 인프라가 모든 32 워크로드에 대해 정상 작동하는지 검증.</p>
+<ul>
+<li>각 워크로드 × 단일 cell (P4E4) × 3 reps</li>
+<li>검증: affinity PASS, no duckdb leak, no python crash, timing 합리적 범위</li>
+<li>산출: <code>smoke_summary.md</code> 32/32 PASS</li>
+</ul>
+<h3 id="43-stage-02-static-feature-extraction">4.3 Stage 02 — Static Feature Extraction</h3>
+<p><code>dev/260507_api_pe_model/02-feature-extraction/_features.py</code></p>
+<h4 id="431-features-29-per-workload">4.3.1 추출 features (29 per workload)</h4>
+<p><strong>Universal static</strong>:
+- <code>nrows</code>, <code>ncols</code>, <code>nbytes</code>, <code>avg_row_bytes</code>
+- <code>dtype_ratio_{numeric, decimal, datetime, string, other}</code> (전체 df)</p>
+<p><strong>Workload metadata</strong> (<code>bpd.ops.tpch_ops</code> 레지스트리):
+- <code>merge_strategy</code> (pass-through, concat, agg, etc.)
+- <code>io_strategy</code> (none, read_csv, read_parquet)
+- <code>lookup_table</code> (none, orders, partsupp, customer)
+- <code>arity</code> (1 or 2)
+- <code>is_inplace</code> (0)
+- <code>splittable</code> ("full" / "rowwise")</p>
+<p><strong>Input-touched features</strong> (compute-touched columns only):
+- <code>input_n_cols</code>, <code>input_nbytes</code> (over touched cols)
+- <code>input_avg_bytes_per_element</code> (continuous, no dtype-bins)
+- <code>input_is_fixed_width</code> (0 if any string, 1 else)
+- <code>input_has_decimal</code> (0/1)
+- <code>input_dtype_ratio_*</code> (informational; <strong>not used as clustering input</strong> per design)</p>
+<p><strong>Workload-specific cardinalities</strong>:
+- <code>groupby_agg</code>: <code>group_cardinality</code> (TPC-H l_orderkey ~1.5M)
+- <code>merge_*</code>: <code>join_key_cardinality</code>, <code>lookup_nrows</code>, <code>lookup_nbytes</code>
+- <code>filter</code>, <code>str_endswith</code>: <code>selectivity_estimate</code></p>
+<p><strong>Output side</strong>:
+- <code>output_rows_estimate</code>, <code>output_rows_ratio</code>
+- <code>output_n_cols</code></p>
+<p><strong>OI estimate</strong> (vtune-calibrated, FW-6):
+- <code>ops_per_row_estimate</code> (measured via VTune <code>INSTRUCTIONS_PER_ROW</code>)
+- <code>ops_estimate</code> = ops_per_row × nrows
+- <code>oi_estimate</code> = ops_estimate / input_nbytes
+- <code>oi_hand_counted</code> (hand-counted alternative, informational)</p>
+<p><strong>VTune memory features</strong> (FW-6b, original 8 APIs only):
+- <code>vtune_dram_bw_avg_gbs</code>, <code>vtune_dram_bw_obs_max_gbs</code>, <code>vtune_dram_platform_max_gbs</code>
+- <code>vtune_memory_bound_pct</code>, <code>vtune_dram_bound_pct</code>, <code>vtune_l1_bound_pct</code>, <code>vtune_l2_bound_pct</code>, <code>vtune_l3_bound_pct</code>
+- → <strong>clustering input에 포함되지 않음</strong> (32 APIs로 확장 미완 + correlation check 미수행)</p>
+<h4 id="432">4.3.2 출력</h4>
+<p><code>features.csv</code>: 32 rows × 29 cols</p>
+<h3 id="44-stage-03-p1e1-calibration">4.4 Stage 03 — P1/E1 Calibration</h3>
+<p>목적: 각 워크로드의 <strong>single-core P vs E 속도비 (raw_pe_ratio)</strong> 측정.</p>
+<ul>
+<li>Grid: (n_p=1, n_e=0), (n_p=0, n_e=1)</li>
+<li>32 workloads × 3 SFs × 2 cells × 13 reps = <strong>2,496 trials, ~10.7h wall</strong></li>
+</ul>
+<p>산출:
+- <code>calibration_phaseA.csv</code>: 96 rows (32×3 SFs) with <code>t_P1_ms</code>, <code>t_E1_ms</code>, <code>raw_pe_ratio = t_E1_ms / t_P1_ms</code>
+- <code>bytes_per_ms_P1</code>, <code>bytes_per_ms_E1</code> (throughput)</p>
+<p><strong>raw_pe_ratio 범위</strong> (32 APIs SF=1):
+- min 0.88 (filter_string_eq — <strong>E가 더 빠름!</strong>)
+- median 1.25
+- max 2.05 (groupby_agg_int_key — <strong>P가 2x 빠름</strong>, anti-scaling 의 단서)</p>
+<h3 id="45-stage-04-contention-grid-phase-a">4.5 Stage 04 — Contention Grid (Phase A 의 핵심)</h3>
+<p><strong>가장 비용 큰 단계</strong>. 모든 후속 모델링의 입력 데이터.</p>
+<h4 id="451">4.5.1 측정 설계</h4>
+<ul>
+<li>Grid: <code>(n_p, n_e) ∈ {0,1,2,3,4} × {0,1,2,3,4}</code> minus <code>(0,0)</code> = <strong>24 cells</strong></li>
+<li>각 cell: <code>pe_ratio = calibration_phaseA.csv[workload, sf].raw_pe_ratio</code> (single-core 측정값 그대로 ratio로 사용)</li>
+<li>13 reps (3 warmup + 10 measured)</li>
+<li><strong>timeout 600s/trial</strong> (Phase A의 SF=5 timeout 교훈 반영)</li>
+</ul>
+<p>총: 32 workloads × 2 SFs (1, 2) × 24 cells × 13 reps = <strong>19,968 trials</strong></p>
+<h4 id="452">4.5.2 실행</h4>
+<ul>
+<li>시작: 2026-05-10 14:23 (PID 22080)</li>
+<li>완료: 2026-05-12 04:27</li>
+<li><strong>Wall time</strong>: 38.1h (원래 추정 14-18h의 2x — <code>groupby_agg_int_key SF=2</code> 단일이 13h 차지, anti-scaling 워크로드의 cell들이 timeout 근접)</li>
+</ul>
+<h4 id="453">4.5.3 산출</h4>
+<ul>
+<li><code>contention_grid_phaseA.csv</code>: 1,536 rows (32×2 SFs × 24 cells) × 20 cols</li>
+<li><code>contention_runs_phaseA.csv</code>: 19,968 trial-level rows (개별 trial 기록)</li>
+</ul>
+<p><strong>핵심 stats per (workload, sf)</strong>:
+- <code>t_workload_max_med_ms</code>: 24 cells × 1 (median over 10 reps)
+- <code>t_workload_max_p10_ms</code>, <code>t_workload_max_p90_ms</code>
+- <code>t_merge_med_ms</code>: parent merge 시간 (parallel merge strategies)
+- <code>affinity_match_pct</code>, <code>cpu_util_target_pct</code>, <code>cpu_util_nontarget_pct</code></p>
+<h4 id="454-ac-04-verdict">4.5.4 AC-04 verdict</h4>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Value</th>
+<th>Pass?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>measured_trials</td>
+<td>19,968</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>unique_pids</td>
+<td>7,635 (recycle 정상)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>consecutive_pid_violations</td>
+<td>0</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>error_trials</td>
+<td>0</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>duckdb_violations</td>
+<td>0</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>affinity_match_fail</td>
+<td>0</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>cell_hash_disagreements</td>
+<td>0</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>AC-04 PASS.</strong></p>
+<h3 id="46-stage-05-categorization-clustering">4.6 Stage 05 — Categorization (Clustering)</h3>
+<h4 id="461-intuition">4.6.1 무엇을 하려는 건가 (intuition 먼저)</h4>
+<p><strong>문제</strong>: 32 APIs 각각에 대해 따로 PE ratio 모델을 만들면 — 미래에 새 API (예: <code>df.pivot_table</code>) 가 추가됐을 때 대응 불가. <strong>일반화 (generalization)</strong> 가 필요.</p>
+<p><strong>아이디어</strong>: pandas operator 들을 <em>비슷한 행동을 보이는 그룹</em> 으로 묶고, <strong>그룹별로 하나의 모델</strong> 을 만들자. 새 API 가 들어오면 어느 그룹에 속하는지 판정 후 그 그룹 모델로 예측.</p>
+<p><strong>문제</strong>: 어떤 기준으로 "비슷"한지 정의해야 함. 4가지 후보:
+1. <strong>Algorithmic taxonomy</strong> (사람이 분류): "filter 류", "groupby 류" — 인간 직관 기반
+2. <strong>Cylon 5-pattern</strong>: embarrassingly parallel, globally reduce, shuffle-compute, ... — 학계 표준 분류
+3. <strong>Point feature 클러스터링</strong>: P/E 단일 속도비 (raw_pe_ratio) 같은 스칼라 1개로 K-means
+4. <strong>Curve-shape feature 클러스터링</strong>: scaling curve 의 모양 (α, β, γ 등 여러 값) 으로 K-means</p>
+<p>Phase A 는 (4) 채택. 이유는 §5.1, §5.2 의 시행착오 기록 참조.</p>
+<h4 id="462-k-means">4.6.2 K-means 가 하는 일 (쉽게)</h4>
+<p>각 API 를 다차원 공간의 점 (point) 로 봄. 좌표는 그 API 의 feature 값들:
+- API <code>filter</code> → (α=0.91, β=0.88, γ=0.20, merge_share=0.04, anti_score=1.0)
+- API <code>merge_inner_singlekey</code> → (α=0.69, β=0.72, γ=0.55, merge_share=0.18, anti_score=1.1)</p>
+<p>K-means 알고리즘:
+1. <strong>K 개의 중심점</strong> (centroid) 을 임의로 잡음
+2. 각 API 점을 가장 가까운 중심점에 할당
+3. 같은 중심점에 할당된 점들의 평균 위치로 중심점 이동
+4. 더 이상 변하지 않을 때까지 2-3 반복</p>
+<p>결과: 32 APIs 가 K 개 cluster 로 분리. 각 cluster 내 점들은 서로 가깝고, 다른 cluster 점들과는 멀다.</p>
+<h4 id="463-k-silhouette-score">4.6.3 K 를 몇으로 정할 것인가 — Silhouette score</h4>
+<p><strong>Silhouette score</strong> 는 cluster 분리 품질을 0 ~ 1 로 표현하는 지표:
+- 각 점에 대해: <code>(다른 cluster 까지 평균 거리 - 같은 cluster 내 평균 거리) / max(둘)</code>
+- 모든 점의 평균 = silhouette score
+- 1.0 에 가까우면 매우 명확하게 분리, 0.0 이면 cluster 구분 없음, 음수면 잘못 분류</p>
+<p><strong>rule of thumb</strong>: silhouette ≥ 0.5 는 "강한 cluster 구조", 0.25 ~ 0.5 는 "합리적", &lt; 0.25 는 "분리 약함".</p>
+<h4 id="464-k-k2-k7-sweep">4.6.4 K 선택 — K=2 부터 K=7 까지 sweep</h4>
+<p>5 features (α, β, γ, log1p(merge_share), log1p(anti_score)) 을 z-score normalize 후 K-means 실행:</p>
+<table>
+<thead>
+<tr>
+<th>K</th>
+<th>Silhouette</th>
+<th>Inertia</th>
+<th>SF=1↔SF=2 stability</th>
+<th>해석</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td><strong>0.666</strong></td>
+<td>80.6</td>
+<td>—</td>
+<td>"linear vs problematic" 이분. 너무 거칠음.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.633</td>
+<td>51.4</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td><strong>0.535</strong></td>
+<td>25.5</td>
+<td><strong>32/32 (100%)</strong></td>
+<td><strong>선택</strong>. silhouette 합리적 + SF 안정.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.426</td>
+<td>15.3</td>
+<td>26/32 (81%)</td>
+<td>silhouette 가장 낮음. over-segmentation.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0.489</td>
+<td>9.6</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td>0.470</td>
+<td>6.4</td>
+<td>—</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>그런데 왜 K=2 (silhouette 0.666) 가 가장 좋은 게 아닌가?</strong> silhouette 만 보면 K=2 가 최고. 하지만 K=2 는 단순히 "linear-scalable vs 나머지" 로 분리하므로 <strong>너무 거침</strong> — anti-scaling, hash-bound, sort 등 다른 contention 패턴 을 한 묶음에 넣어 cluster 별 PE ratio 예측이 불가능. K=4 가 silhouette × 실용성 의 최적.</p>
+<p><strong>SF stability 의 중요성</strong>: SF=1 데이터로 분류한 cluster 가 SF=2 에서도 같이 유지되는지. K=4 에서 32/32 (100%) → SF=1 측정으로 모델 만들면 SF=2 에서도 작동 가능. K=5 는 81% (6 워크로드가 SF=1↔SF=2 사이에 cluster 이동) → SF 변화에 fragile.</p>
+<h4 id="465-k4-cluster-pca-2d-projection">4.6.5 K=4 cluster 시각화 (PCA 2D projection)</h4>
+<p>5차원 feature space 는 직접 보기 어려움. <strong>PCA (Principal Component Analysis)</strong> 로 2D 로 투영하면 cluster 분리 시각화 가능. 결과 (Stage 05 plot <code>phaseA_02-pca-scatter.png</code>):
+- PC1, PC2 합쳐 95% 분산 설명 — 2D 가 5D 정보를 거의 보존
+- 4 cluster 가 명확히 분리된 영역에 위치
+- C2 (anti-scaling) 가 가장 멀리 있는 outlier point</p>
+<h4 id="466-k4-cluster-vs-algorithmic-taxonomy">4.6.6 K=4 cluster vs 사람 직관 (algorithmic taxonomy)</h4>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>n</th>
+<th>Algorithmic family 와 정합?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0 hash-bound mixed</td>
+<td>5</td>
+<td>merge family 5개 중 4개 + sort_values_multikey_mixed (sort family 가 hash-bound 처럼 행동)</td>
+</tr>
+<tr>
+<td>C1 linear-scalable</td>
+<td>23</td>
+<td>filter (6) + groupby (5, int_key 제외) + dt (3) + str (4) + case_when (3) + merge_anti (1) + read_csv (1)</td>
+</tr>
+<tr>
+<td>C2 anti-scaling</td>
+<td>1</td>
+<td>groupby_agg_int_key (200K hash bucket — L3 초과)</td>
+</tr>
+<tr>
+<td>C3 sort-with-merge</td>
+<td>2</td>
+<td>sort family 2개 (mc_sort_pure, sort_descending)</td>
+</tr>
+<tr>
+<td>outlier</td>
+<td>1</td>
+<td>read_parquet_full (IO-bound)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>비정합 발견 1</strong>: <code>sort_values_multikey_mixed</code> 가 sort family 가 아닌 <strong>C0 hash-bound</strong> 에 들어감. 이유: multi-key sort 의 partition + concat + re-sort 비용이 hash join 의 build + probe 와 비슷한 contention 프로파일. <strong>Empirical clustering 의 진짜 가치</strong> — 사람 직관이 놓치는 행동적 유사성 발견.</p>
+<p><strong>비정합 발견 2</strong>: <code>merge_anti</code> 가 merge family 가 아닌 <strong>C1 linear-scalable</strong> 에 들어감. 이유: anti-join 은 indicator merge + filter 의 합성. 실제 dominant cost 는 filter (linear-scalable) → merge family 와 다른 cluster.</p>
+<p>→ 이 두 발견이 "behavioral clustering &gt; algorithmic taxonomy" 의 직접 증거.</p>
+<h3 id="47-stage-06-cluster-regression">4.7 Stage 06 — Cluster Regression</h3>
+<h4 id="471">4.7.1 모델</h4>
+<div class="codehilite"><pre><span></span><code>speedup(n_p, n_e) = [n_p^α + (1/r_api) · n_e^β] · (1 − γ · n_p · n_e / 16)
+</code></pre></div>
+
+<p>per-cluster (α, β, γ). r_api = workload별 raw_pe_ratio (Stage 03).</p>
+<h4 id="472-fit-on-sf1-hold-out-sf2">4.7.2 Fit on SF=1, hold-out SF=2</h4>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>n_train</th>
+<th>R²_tr</th>
+<th>R²_te</th>
+<th>MAPE_tr</th>
+<th>MAPE_te</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0 (5)</td>
+<td>120</td>
+<td>0.946</td>
+<td>0.946</td>
+<td>21.8%</td>
+<td>20.3%</td>
+</tr>
+<tr>
+<td>C1 (23)</td>
+<td>552</td>
+<td>0.987</td>
+<td>0.987</td>
+<td>7.4%</td>
+<td>7.9%</td>
+</tr>
+<tr>
+<td><strong>C2 (1)</strong></td>
+<td>24</td>
+<td><strong>-2.90</strong></td>
+<td><strong>-2.86</strong></td>
+<td>43.6%</td>
+<td>44.6%</td>
+</tr>
+<tr>
+<td>C3 (2)</td>
+<td>48</td>
+<td>0.984</td>
+<td>0.989</td>
+<td>8.8%</td>
+<td>7.5%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>C2 R² 음수</strong>: anti-scaling (α&lt;0) → speedup 모델의 power-law 형식 자체 부적합. <strong>per-API fallback 으로 분리</strong> (Stage 07 hybrid).</li>
+<li>C0, C1, C3는 R² ≥ 0.7 AC-06 hard gate 통과.</li>
+</ul>
+<h3 id="48-stage-07-loocv-cross-validation">4.8 Stage 07 — LOOCV Cross-Validation</h3>
+<h4 id="481-k4-hybrid">4.8.1 K=4 hybrid 전략</h4>
+<ul>
+<li><strong>Cluster LOOCV</strong>: C0, C1, C3 의 각 API hold-out → cluster 나머지 재fit → 예측</li>
+<li><strong>Per-API outlier</strong>: 2 fundamental outliers (groupby_agg_int_key, read_parquet_full)</li>
+<li>groupby_agg_int_key: anti-scaling → 항상 P1E0 (single P-core)</li>
+<li>read_parquet_full: IO-bound → 항상 P0E4 (4 E-cores, IO 병렬화)</li>
+</ul>
+<h4 id="482">4.8.2 결과</h4>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>Mode</th>
+<th>n</th>
+<th>Pass count</th>
+<th>Mean MAPE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0 (5 hash)</td>
+<td>LOOCV</td>
+<td>5</td>
+<td><strong>2/5</strong></td>
+<td>17.0%</td>
+</tr>
+<tr>
+<td>C1 (23 linear)</td>
+<td>LOOCV</td>
+<td>23</td>
+<td><strong>23/23</strong> ✅</td>
+<td>7.5%</td>
+</tr>
+<tr>
+<td>C3 (2 sort)</td>
+<td>LOOCV</td>
+<td>2</td>
+<td>1/2</td>
+<td>16.4%</td>
+</tr>
+<tr>
+<td>Outliers</td>
+<td>per-API</td>
+<td>2</td>
+<td>0/2</td>
+<td>35.0%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 26/32 = 81% PASS</strong>, mean MAPE 11.39%, median 8.57%.</p>
+<h4 id="483-6-fails">4.8.3 잔여 6 fails 진단</h4>
+<p><strong>Fundamental physical outliers (2)</strong> — 다른 model 필요:
+| API | MAPE | 원인 |
+|---|---|---|
+| groupby_agg_int_key | 44% | α&lt;0 (anti-scaling), power-law 부적합 |
+| read_parquet_full | 26% | IO-bound (disk + decompress), 다른 physics |</p>
+<p>→ per-API lookup. Speedup model 자체 부적합.</p>
+<p><strong>Borderline cluster fails (4)</strong> — cluster heterogeneity:
+| API | MAPE | Cluster context |
+|---|---|---|
+| merge_chain_3tables | 17.0% | C0 (5 APIs, 작고 heterogeneous) |
+| merge_inner_multikey | 21.2% | C0 |
+| sort_values_multikey_mixed | 19.3% | C0 |
+| sort_descending | 18.2% | C3 (2 APIs, refit on 1 = unstable) |</p>
+<p>→ Cluster 더 크게 (더 많은 hash API 추가) 또는 per-API fallback.</p>
+<h3 id="49-stage-08-public-api-packaging">4.9 Stage 08 — Public API Packaging</h3>
+<h4 id="491-bpdauto_ratiopredict_ratioworkload-sample_df-sf_hintnone">4.9.1 <code>bpd.auto_ratio.predict_ratio(workload, sample_df, *, sf_hint=None)</code></h4>
+<div class="codehilite"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PERatioRecommendation</span><span class="p">:</span>
+    <span class="n">pe_ratio</span><span class="p">:</span> <span class="nb">float</span>                <span class="c1"># P:E 비율 (e.g., 1.45 = P가 1.45x 더 받음)</span>
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>         <span class="c1"># 0, 1, 3 (cluster) or None (outlier)</span>
+    <span class="n">cluster_label</span><span class="p">:</span> <span class="nb">str</span>             <span class="c1"># &#39;linear-scalable&#39; / &#39;hash-bound mixed&#39; / ...</span>
+    <span class="n">outlier</span><span class="p">:</span> <span class="nb">bool</span>                  <span class="c1"># True if per-API fallback</span>
+    <span class="n">recommendation</span><span class="p">:</span> <span class="nb">dict</span>           <span class="c1"># {&#39;cell&#39;: &#39;P1E0&#39;, &#39;reason&#39;: &#39;...&#39;}</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">model_version</span><span class="p">:</span> <span class="nb">str</span>             <span class="c1"># &#39;phase_a_k4_hybrid_v1&#39;</span>
+</code></pre></div>
+
+<p>내부 흐름:
+1. <code>_load_model()</code> (lru_cache, JSON 1.4ms cold start)
+2. <code>_infer_sf(sample_df)</code> (nrows 기반: ≤8M → SF=1, ≤16M → SF=2, ≤40M → SF=5)
+3. Known workload: model[workload]["raw_pe_ratio_by_sf"][sf] lookup
+4. Unknown workload: safe fallback (pe_ratio=1.0 + warning)</p>
+<h4 id="492-overhead-stage-08-validation">4.9.2 Overhead 측정 결과 (Stage 08 validation)</h4>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Median</th>
+<th>p10</th>
+<th>p90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cold start (first call)</td>
+<td><strong>1.42 ms</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Known API (filter)</td>
+<td>1.50 μs</td>
+<td>1.40 μs</td>
+<td>2.20 μs</td>
+</tr>
+<tr>
+<td>Unknown API</td>
+<td>3.30 μs</td>
+<td>3.10 μs</td>
+<td>3.50 μs</td>
+</tr>
+</tbody>
+</table>
+<p><strong>모든 워크로드 대비 &lt; 0.003%</strong>. 가장 빠른 워크로드 (54ms) 기준 0.003%, 가장 느린 (16s) 기준 0.000009%.</p>
+<h4 id="493-realized-speedup-32-apis">4.9.3 Realized speedup (32 APIs)</h4>
+<ul>
+<li>Mean: <strong>4.79x</strong> (best cell vs P1 baseline)</li>
+<li>Median: <strong>5.18x</strong></li>
+<li>≥ 3x: 28/32</li>
+<li>≥ 5x: 19/32</li>
+<li>통과 unit tests: 17/17</li>
+</ul>
+<hr />
+<h2 id="5-feature-engineering">5. Feature Engineering 상세</h2>
+<h3 id="50-feature-engineering-intuition">5.0 Feature engineering 이란 (intuition)</h3>
+<p><strong>문제</strong>: API 를 cluster 로 묶고 PE ratio 를 예측하려면 <em>수치 입력</em> 이 필요. pandas operator 는 함수 객체일 뿐이라 그 자체로는 K-means 에 못 들어감.</p>
+<p><strong>해결</strong>: 각 API 의 <em>행동 특성</em> 을 숫자로 압축. 이게 feature engineering.</p>
+<p><strong>Phase A 는 3 세대의 feature 시도를 거침</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>세대</th>
+<th>출처</th>
+<th>feature 종류</th>
+<th>데이터</th>
+<th>LOOCV pass</th>
+<th>결론</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gen 1</td>
+<td>Stage 02</td>
+<td>정적 (static) 만</td>
+<td>8 APIs</td>
+<td>n/a</td>
+<td>clustering 없이는 prediction 불가</td>
+</tr>
+<tr>
+<td>Gen 2</td>
+<td>Stage 03</td>
+<td>+ calibrated (raw_pe_ratio)</td>
+<td>8 APIs</td>
+<td><strong>43%</strong></td>
+<td>point feature 한계 노출</td>
+</tr>
+<tr>
+<td>Gen 3</td>
+<td>Stage 04</td>
+<td>+ curve-shape (α, β, γ)</td>
+<td><strong>32 APIs</strong></td>
+<td><strong>81%</strong></td>
+<td><strong>채택 (FINAL)</strong></td>
+</tr>
+</tbody>
+</table>
+<p>각 세대를 풀어 씁니다.</p>
+<h3 id="51-gen-1-static-feature">5.1 Gen 1 — 정적 (static) feature</h3>
+<h4 id="511">5.1.1 어디서 나오나</h4>
+<p><code>bpd/ops/tpch_ops.py</code> 의 워크로드 함수 + sample_df 를 분석해 <em>측정 없이</em> 추출 가능한 속성들.</p>
+<h4 id="512-features-29">5.1.2 추출되는 features (29 종)</h4>
+<p><strong>A. Universal</strong>: 데이터 크기 / 모양
+- <code>nrows</code> (행 수), <code>ncols</code> (컬럼 수), <code>nbytes</code> (메모리 크기), <code>avg_row_bytes</code> (행당 바이트)
+- <code>dtype_ratio_numeric/decimal/datetime/string/other</code> (전체 df 의 dtype 분포)</p>
+<p><strong>B. Workload metadata</strong> (<code>tpch_ops</code> 레지스트리에서):
+- <code>merge_strategy</code> ("pass-through" / "concat" / "agg" / "partial_aggregate") — partition 결과를 부모가 어떻게 합치는지
+- <code>io_strategy</code> ("none" / "read_csv" / "read_parquet") — IO 가 워커 내부에 있는지
+- <code>lookup_table</code> ("none" / "orders" / "partsupp" / "customer") — join target
+- <code>arity</code> (1 = single input, 2 = with lookup)
+- <code>splittable</code> ("full" = row-wise partition 가능)</p>
+<p><strong>C. Input-touched features</strong>: 워크로드가 <em>실제 건드리는</em> 컬럼만 추출 (cluster 분리에 핵심)
+- <code>input_nbytes</code>: 건드린 컬럼의 메모리 크기 (전체가 아닌 워크로드별)
+- <code>input_avg_bytes_per_element</code> (continuous): 건드린 데이터의 element 평균 크기
+- <code>input_is_fixed_width</code> (0/1): string 있으면 0, 모두 int/decimal/date 면 1
+- <code>input_has_decimal</code> (0/1): decimal128 컬럼 존재 여부
+- <code>input_n_cols</code>: 건드린 컬럼 수</p>
+<p><strong>D. Workload-specific</strong>: 워크로드 종류에 따라 다름
+- <code>groupby_agg</code>: <code>group_cardinality</code> (그룹 수, 200K hash bucket 같은 outlier 감지)
+- <code>merge_*</code>: <code>join_key_cardinality</code>, <code>lookup_nrows</code>, <code>lookup_nbytes</code>
+- <code>filter</code>, <code>str_endswith</code>: <code>selectivity_estimate</code> (필터 통과율)</p>
+<p><strong>E. Output side</strong>: 결과 크기
+- <code>output_rows_estimate</code>: 예상 결과 행 수 (selectivity / fanout 기반)
+- <code>output_rows_ratio</code>: input 대비 output 비율
+- <code>output_n_cols</code>: 결과 컬럼 수</p>
+<p><strong>F. OI estimate</strong> (FW-6 vtune-calibrated):
+- <code>ops_per_row_estimate</code>: 행당 명령어 수 (VTune <code>INSTRUCTIONS_PER_ROW</code> 측정값)
+- <code>ops_estimate</code> = ops_per_row × nrows
+- <code>oi_estimate</code> = ops_estimate / input_nbytes — Roofline OI</p>
+<h4 id="513-feature">5.1.3 정적 feature 만으로는 부족한 이유</h4>
+<p>정적 feature 는 "이 워크로드가 어떻게 생겼는가" 만 묘사. 하지만 PE ratio 결정에는 "P 와 E 가 얼마나 다른 속도로 처리하는가" 가 필요 — 이건 <em>측정해야 알 수 있는</em> 동적 속성. 따라서 Gen 2 에서 calibrated feature 추가.</p>
+<h3 id="52-gen-2-calibrated-feature-raw_pe_ratio">5.2 Gen 2 — Calibrated feature (raw_pe_ratio)</h3>
+<h4 id="521-stage-03">5.2.1 측정 방법 (Stage 03)</h4>
+<p>각 워크로드 × 각 SF 에 대해:
+- (n_p=1, n_e=0) 워커 1개 P-core 에서 측정 → <code>t_P1_ms</code> (median over 10 reps)
+- (n_p=0, n_e=1) 워커 1개 E-core 에서 측정 → <code>t_E1_ms</code>
+- <strong><code>raw_pe_ratio = t_E1_ms / t_P1_ms</code></strong> (E 가 P 대비 몇 배 느린가)</p>
+<p>직관: <code>raw_pe_ratio = 2.0</code> 이면 E 가 P 의 2배 느림 → P 에 2배 데이터 줘야 균형. <code>raw_pe_ratio = 1.0</code> 이면 균등 분배.</p>
+<h4 id="522-raw_pe_ratio-32-apis-sf1">5.2.2 raw_pe_ratio 분포 (32 APIs, SF=1)</h4>
+<ul>
+<li>min 0.88 (<code>filter_string_eq</code>) — <strong>E 가 P 보다 빠름</strong> (예외적)</li>
+<li>median 1.25 — 대부분 P 가 약간 빠름</li>
+<li>max 2.05 (<code>groupby_agg_int_key</code>) — P 가 E 의 2x 빠름</li>
+</ul>
+<h4 id="523-gen-2-k3-clustering-8-apis">5.2.3 Gen 2 의 K=3 clustering 시도 (8 APIs)</h4>
+<p><strong>features</strong>: 3개
+- <code>raw_pe_ratio</code> (point)
+- <code>alpha_P_scaling</code> (Stage 04 contention grid 에서 derived, intra-P scaling)
+- <code>merge_cost_share_p4e4</code> (parent merge 시간 비중)</p>
+<p><strong>K-means K=3</strong>: silhouette 0.47</p>
+<p><strong>LOOCV 결과</strong>: 3/7 PASS = <strong>43%</strong>, mean MAPE 28%</p>
+<p><strong>왜 실패했나?</strong> 핵심 cluster heterogeneity:
+- C0 cluster 에 <code>merge_inner_multikey</code> (α=0.43, sub-linear) 와 <code>dt_year</code> (α=0.89, near-linear) 가 같이 들어감
+- 둘 다 <code>raw_pe_ratio ≈ 1.5</code> 라서 같은 cluster — 하지만 <strong>scaling 행동은 정반대</strong>
+- LOOCV 시 <code>merge_inner_multikey</code> hold-out → C0 refit 은 dt_year 만 남음 → 새 cluster center 가 멀리 이동 → 예측 실패</p>
+<p><strong>교훈</strong>: <strong>point feature 하나로는 cluster 정체성을 못 잡는다</strong>. P 와 E 단일 속도비가 같아도 다중 코어로 갈 때 행동은 완전히 다를 수 있음.</p>
+<h4 id="524-codex">5.2.4 Codex 의 가설</h4>
+<p>외부 AI 리뷰 (Codex, 2026-05-08):</p>
+<blockquote>
+<p>"데이터 부족이 LOOCV fail 의 원인. 곡선 모양 features (point 가 아닌) 필요. K=3 의 heterogeneous C0 가 LOOCV 망 trigger. cluster generalization 잘 안 됨, self-calibration 권장."</p>
+</blockquote>
+<p>이 가설을 검증하려고 Gen 3 로 진입.</p>
+<h3 id="53-gen-3-curve-shape-feature-32-apis">5.3 Gen 3 — Curve-shape feature (32 APIs)</h3>
+<h4 id="531-curve-shape">5.3.1 Curve-shape 이란</h4>
+<p>PE ratio 결정에 정말 중요한 정보는 "P 가 몇 배 빠른가" (단일 점) 가 아니라 <strong>"코어 수가 늘어날 때 어떻게 scaling 하는가" (곡선)</strong>. 곡선 모양 자체가 contention regime 의 지문.</p>
+<p>예시 — 두 워크로드의 P-cluster scaling:</p>
+<div class="codehilite"><pre><span></span><code>P1: 100ms       100ms
+P2: 53ms        85ms     ← 2배 빠른가? B는 안 빨라짐
+P3: 38ms        80ms
+P4: 28ms        75ms
+   linear      saturated
+</code></pre></div>
+
+<p>둘 다 <code>raw_pe_ratio</code> 가 같아도 (E 측정값 동일이라 가정) <strong>scaling 곡선은 완전히 다름</strong>. A 는 linear-scalable (P 4개 다 활용 가능), B 는 hash-bound (1개 추가 효과 미미). PE 분배 시 A 는 P4E4 가 best, B 는 P1E0 가 best 일 수도 있음.</p>
+<h4 id="532-curve-shape-feature-5">5.3.2 Curve-shape feature 5종 — 각각 무엇을 잡나</h4>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>정의</th>
+<th>무엇을 capture</th>
+<th>직관</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>α</strong> (alpha_P_scaling)</td>
+<td><code>log(t_P1 / t_P4) / log(4)</code></td>
+<td>P-cluster intra scaling exponent</td>
+<td>1.0 = ideal linear (P4 가 P1 의 1/4 시간), 0.0 = no scaling (P4=P1), 음수 = anti-scaling (P4&gt;P1)</td>
+</tr>
+<tr>
+<td><strong>β</strong> (beta_E_scaling)</td>
+<td><code>log(t_E1 / t_E4) / log(4)</code></td>
+<td>E-cluster intra scaling exponent</td>
+<td>같은 식, E-cluster</td>
+</tr>
+<tr>
+<td><strong>γ</strong> (gamma_proxy)</td>
+<td><code>1 − observed / naive_sum</code> at P4E4</td>
+<td>cross-cluster interference</td>
+<td>0 = P 와 E independent, 1 = 완전 충돌, 음수 = synergy</td>
+</tr>
+<tr>
+<td><strong>log1p(merge_share)</strong></td>
+<td><code>log1p(t_merge / t_max)</code> at P4E4</td>
+<td>parent merge cost 비중</td>
+<td>0 = parent 거의 안 함, 큰 값 = parent 가 bottleneck (sort 류)</td>
+</tr>
+<tr>
+<td><strong>log1p(anti_score)</strong></td>
+<td><code>log1p(t_P4E4 / t_best)</code></td>
+<td>anti-scaling 강도</td>
+<td>0 = P4E4 가 best, 큰 값 = best 가 적은 코어에 있음</td>
+</tr>
+</tbody>
+</table>
+<h4 id="533-raw_pe_ratio">5.3.3 왜 raw_pe_ratio 를 제외했나</h4>
+<p>수학적으로 α 와 β 와 t_P1, t_E1 이 있으면 raw_pe_ratio 는 derivable. 따로 추가하면 <strong>redundant</strong> — K-means 의 distance 가 같은 정보를 두 번 받아 weight 가 왜곡됨.</p>
+<p>Feature subset 실험 (8 APIs, Stage 05):
+| subset | dim | K=3 silhouette |
+|---|---|---|
+| 7 features (모두 포함) | 7 | 0.217 (worst) |
+| 4 features (pe+throughput+α+merge_share) | 4 | 0.249 |
+| <strong>3 features (pe+α+merge_share)</strong> | 3 | <strong>0.473 (best)</strong> |</p>
+<p>→ <strong>8-sample 환경에서는 dim 줄이는 게 silhouette 결정적 영향</strong>. Gen 3 에서는 32 sample 이라 5-dim 까지 OK (silhouette 0.535).</p>
+<h4 id="534-z-score-normalization">5.3.4 Z-score normalization</h4>
+<p>K-means 는 euclidean distance 기반 → feature scale 다르면 큰 scale feature 가 distance 지배.</p>
+<p>각 feature 를 <code>(x - mean) / std</code> 로 변환 → 모든 feature 가 평균 0, 분산 1 → 동등한 weight 로 cluster boundary 결정.</p>
+<h4 id="535-log1p-transform">5.3.5 Log1p transform 이유</h4>
+<p><code>merge_cost_share</code> 와 <code>anti_score</code> 는 <strong>skewed distribution</strong>:
+- 대부분 워크로드 merge_share = 0.01 ~ 0.1 (작음)
+- sort 류 = 1.0 ~ 10.0 (매우 큼)
+- 두 그룹의 distance 가 raw scale 로 ~100x → K-means 가 sort 만 분리하고 나머지는 한 cluster 로</p>
+<p><code>log1p(x) = log(1 + x)</code> 적용:
+- 작은 값 (0.01) → 0.01 (거의 그대로)
+- 큰 값 (10.0) → 2.4
+- 두 그룹의 distance 가 ~100x → ~10x 로 축소</p>
+<p>→ <strong>K-means 가 양쪽 정보를 균형 있게 사용</strong>.</p>
+<h3 id="54-feature">5.4 미사용 feature (왜 안 썼나)</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>후보였던 이유</th>
+<th>제외 이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input_dtype_ratio_*</code> (numeric/decimal/datetime/string/other 5 bins)</td>
+<td>dtype 이 cost 좌우</td>
+<td><strong>Categorical bin → OOD void</strong>. 사용자가 unseen dtype (e.g., <code>pd.Float32</code> ) 으로 호출하면 어느 bin 에도 안 떨어짐. 대체: <code>input_avg_bytes_per_element</code> (continuous) + <code>input_has_decimal</code> (binary)</td>
+</tr>
+<tr>
+<td><code>OI_hand_counted</code> / <code>oi_estimate</code></td>
+<td>Roofline model 의 표준 metric</td>
+<td><strong>pandas 에서 OI 무용</strong>. FLOPs ≈ 0 (대부분 memcpy + comparison) → OI 모든 API 에서 ≈ 0 → cluster 분리 불가</td>
+</tr>
+<tr>
+<td><code>vtune_memory_bound_pct</code> (VTune Top-down)</td>
+<td>OI 대체로 더 적합</td>
+<td><strong>8 APIs only 측정</strong>, 32 APIs 미확장. correlation check 미수행. (Future work)</td>
+</tr>
+<tr>
+<td><code>vtune_dram_bw_avg_gbs</code></td>
+<td>DRAM saturation 직접 측정</td>
+<td>같음 — 8 APIs 만. (Future work)</td>
+</tr>
+<tr>
+<td><code>selectivity_estimate</code></td>
+<td>filter 류의 cost 좌우</td>
+<td><strong>workload-specific</strong>: filter / str_endswith 에만 존재. 모든 cluster invariant 한 feature 아님</td>
+</tr>
+<tr>
+<td><code>nrows</code>, <code>input_nbytes</code></td>
+<td>데이터 크기</td>
+<td><strong>absolute scale</strong> — predict_ratio 의 입력 (sample_df) 에서 scaling 추론</td>
+</tr>
+<tr>
+<td><code>raw_pe_ratio</code></td>
+<td>P/E 단일 속도비</td>
+<td><strong>redundant with α, β</strong> (수학적으로 derivable)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="55-feature-engineering-5">5.5 Feature engineering 의 핵심 5가지 발견</h3>
+<ol>
+<li><strong>Point feature 는 cluster 분리 약함</strong>: 단일 cell 측정값 (raw_pe_ratio) 만으로는 scaling regime 못 구분. 곡선 모양 필요.</li>
+<li><strong>Curve-shape feature (α, β, γ) 가 결정적</strong>: scaling exponent 가 곧 cluster identity. 같은 raw_pe_ratio 라도 α 다르면 다른 cluster.</li>
+<li><strong>OI 는 pandas 에서 무용</strong>: FLOPs ≈ 0. 대체로 "memory-bound %" 가 필요하지만 미통합.</li>
+<li><strong>Categorical dtype bins 위험</strong>: OOD void 생성 → continuous (avg_bytes_per_element) 대체.</li>
+<li><strong>Skewed feature 는 log1p 필수</strong>: K-means euclidean distance 가 outlier 에 끌려가지 않도록.</li>
+</ol>
+<hr />
+<h2 id="6-contention">6. Contention 모델링</h2>
+<h3 id="61-lunar-lake-lpi">6.1 Lunar Lake LPI 의 아키텍처적 사실</h3>
+<p>서베이 (<code>docs/memo/0508_survey.html</code>) 핵심:</p>
+<table>
+<thead>
+<tr>
+<th>사실</th>
+<th>함의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-cluster와 E-cluster L3 미공유</td>
+<td>고전 shared-cache contention 분석 (Yan &amp; Zhang RTAS'08, Lv et al. LITES'16) 직접 적용 X</td>
+</tr>
+<tr>
+<td>DRAM controller 공유</td>
+<td>cross-cluster interference 의 단일 source — <strong>bandwidth contention</strong></td>
+</tr>
+<tr>
+<td>LPDDR5x on-package</td>
+<td>메모리 latency 낮음, BW 높음 (~129 GB/s 이론, ~100 GB/s 실측 saturation)</td>
+</tr>
+</tbody>
+</table>
+<p>→ Lunar Lake LPI는 <strong>MemGuard / Bandwidth Bandit / PCCS 의 contention 모델</strong> 이 정확한 어휘.</p>
+<h3 id="62-cross-cluster-interference-proxy">6.2 γ — Cross-Cluster Interference Proxy</h3>
+<h4 id="621">6.2.1 정의</h4>
+<div class="codehilite"><pre><span></span><code><span class="nx">γ</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">−</span><span class="w"> </span><span class="p">(</span><span class="nx">T_observed</span><span class="p">(</span><span class="nx">P4E4</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="nx">T_naive_sum</span><span class="p">(</span><span class="nx">P4E4</span><span class="p">))</span>
+
+<span class="k">where</span><span class="p">:</span>
+<span class="w">  </span><span class="nx">T_naive_sum</span><span class="p">(</span><span class="nx">P4E4</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">N_rows</span><span class="w"> </span><span class="err">×</span><span class="w"> </span><span class="p">[</span><span class="nx">w_P4</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">4</span><span class="err">·</span><span class="nx">throughput_P1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">w_E4</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">4</span><span class="err">·</span><span class="nx">throughput_E1</span><span class="p">)]</span>
+<span class="w">                    </span><span class="p">=</span><span class="w"> </span><span class="nx">predicted</span><span class="w"> </span><span class="nx">time</span><span class="w"> </span><span class="nx">assuming</span><span class="w"> </span><span class="nx">no</span><span class="w"> </span><span class="nx">cross</span><span class="o">-</span><span class="nx">cluster</span><span class="w"> </span><span class="nx">interference</span>
+<span class="w">  </span><span class="nx">T_observed</span><span class="p">(</span><span class="nx">P4E4</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">actual</span><span class="w"> </span><span class="nx">measured</span><span class="w"> </span><span class="nx">time</span><span class="w"> </span><span class="nx">at</span><span class="w"> </span><span class="p">(</span><span class="nx">n_p</span><span class="p">=</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nx">n_e</span><span class="p">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+
+<ul>
+<li>γ = 0: P와 E 가 independent 하게 실행 (no interference)</li>
+<li>γ &gt; 0: cross-cluster slowdown 존재</li>
+<li>γ &lt; 0: super-linear improvement (메모리 prefetch synergy — 드물지만 일부 워크로드에서 관찰)</li>
+</ul>
+<h4 id="622-cluster-mean">6.2.2 측정값 (cluster mean)</h4>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>γ</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0 (hash-bound)</td>
+<td><strong>0.486</strong></td>
+<td>48.6% slowdown when P4 + E4 co-run. hash table이 DRAM BW 폭주</td>
+</tr>
+<tr>
+<td>C1 (linear-scalable)</td>
+<td>0.198</td>
+<td>19.8% slowdown. compute-friendly, BW 낮음</td>
+</tr>
+<tr>
+<td>C3 (sort-with-merge)</td>
+<td>0.198</td>
+<td>C1 와 비슷 — sort 자체는 compute-heavy</td>
+</tr>
+</tbody>
+</table>
+<h4 id="623">6.2.3 검증</h4>
+<p>Speedup model:</p>
+<div class="codehilite"><pre><span></span><code>speedup(n_p, n_e) = [n_p^α + (1/r) · n_e^β] · (1 − γ · n_p · n_e / 16)
+                                                ^^^^^^^^^^^^^^^^^^^^^^
+                                                interference term
+</code></pre></div>
+
+<ul>
+<li><code>n_p · n_e / 16</code>: cross-cluster 활성도 (0-1 normalized) — P4E4 일 때 1.0</li>
+<li><code>(1 − γ · ...)</code>: 다중-cluster 활성 시 throughput de-rate</li>
+</ul>
+<p><strong>R²_test = 0.95</strong> (C0, C1, C3 평균) → γ proxy 가 cross-cluster contention을 적절히 capture.</p>
+<h3 id="63-anti-scaling">6.3 Anti-Scaling 발견</h3>
+<h4 id="631-groupby_agg_int_key">6.3.1 groupby_agg_int_key 의 미스터리</h4>
+<p>Stage 04 Phase A 측정 중 발견:
+- l_partkey (200,000 unique groups) 기준 groupby
+- <strong>best cell = P1E0 (single P-core)</strong>. P4E4 보다 단일 P가 2x 빠름.
+- α = -0.34, β = -0.18 (둘 다 음수)</p>
+<h4 id="632">6.3.2 원인 분석</h4>
+<ul>
+<li>l_partkey 200K groups × hash entry (~80 bytes) = ~16 MB hash table</li>
+<li>L3 = 12 MB → hash table이 LLC 초과</li>
+<li>다중 코어가 같은 hash bucket을 동시 update 시도 → cache line ping-ponging</li>
+<li>단일 코어가 hash table을 cache-resident하게 유지하는 게 더 빠름</li>
+</ul>
+<h4 id="633">6.3.3 모델링 한계</h4>
+<ul>
+<li><code>speedup(n_p, n_e) = ... · (1 − γ · ...)</code> 형식은 항상 monotonic increasing in (n_p, n_e)</li>
+<li>anti-scaling은 monotonic decreasing → 형식 자체 부적합</li>
+<li><strong>Solution</strong>: per-API fallback. predict_ratio('groupby_agg_int_key') → 항상 P1E0 lookup.</li>
+</ul>
+<h3 id="64-sf5-cache-pressure-effect">6.4 SF=5 Cache Pressure Effect</h3>
+<p>부분 측정 (8/32 workloads):</p>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>SF=1 best speedup</th>
+<th>SF=5 best speedup</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>column_arith</td>
+<td>6.08x</td>
+<td><strong>7.04x</strong></td>
+<td>+16% (cache-stream, SIMD)</td>
+</tr>
+<tr>
+<td>sort_values</td>
+<td>1.29x</td>
+<td><strong>1.89x</strong></td>
+<td>+47% (algorithm cost dominates)</td>
+</tr>
+<tr>
+<td>filter</td>
+<td>4.60x</td>
+<td>2.14x</td>
+<td><strong>-53%</strong> (mask + indexing cache 압박)</td>
+</tr>
+<tr>
+<td>merge_inner_singlekey</td>
+<td>3.29x</td>
+<td>1.35x</td>
+<td><strong>-59%</strong> (hash table OOC)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>핵심 발견</strong>: hash-join 류는 SF=5에서 best cell이 P4E4 → P3E1로 이동 (적은 코어가 더 빠름). LLC 초과 시 multi-core scaling 무력화.</p>
+<h4 id="641-v1-sf">6.4.1 모델 v1의 SF별 처리</h4>
+<p><code>bpd/models/pe_ratio_model_lunar_lake.json</code>:
+- per (workload, sf) raw_pe_ratio 저장 (3 SFs: 1, 2, 5)
+- <code>predict_ratio(workload, sample_df)</code> → nrows 기반 SF 추론 → 적절한 raw_pe_ratio lookup
+- (α, β, γ) 는 cluster-level 평균이고 SF별 분리 없음 (limitation)</p>
+<hr />
+<h2 id="7">7. 예측 모델</h2>
+<h3 id="71-k4-hybrid">7.1 최종 K=4 + Hybrid 모델</h3>
+<p><code>bpd/models/pe_ratio_model_lunar_lake.json</code> (model_version: <code>phase_a_k4_hybrid_v1</code>)</p>
+<h4 id="711-cluster">7.1.1 Cluster 정의</h4>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>Label</th>
+<th>α</th>
+<th>β</th>
+<th>γ</th>
+<th>n</th>
+<th>Members</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>C0</strong></td>
+<td>hash-bound mixed</td>
+<td>0.567</td>
+<td>0.646</td>
+<td><strong>0.486</strong></td>
+<td>5</td>
+<td>merge_chain_3tables, merge_inner_multikey, merge_inner_singlekey, merge_left_outer, sort_values_multikey_mixed</td>
+</tr>
+<tr>
+<td><strong>C1</strong></td>
+<td>linear-scalable</td>
+<td>0.955</td>
+<td>0.912</td>
+<td>0.198</td>
+<td>23</td>
+<td>between_filter, case_when_<em>, column_arith, dt_</em>, filter<em>, groupby_count, groupby_min_max, groupby_nunique, groupby_single_key_string, groupby_agg, isin_filter, merge_anti, multi_cond_filter, read_csv, str_</em></td>
+</tr>
+<tr>
+<td><strong>C3</strong></td>
+<td>sort-with-merge</td>
+<td>0.981</td>
+<td>0.906</td>
+<td>0.198</td>
+<td>2</td>
+<td>multi_column_sort_pure, sort_descending</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>anti-scaling (per-API)</td>
+<td>-0.34</td>
+<td>-0.18</td>
+<td>n/a</td>
+<td>1</td>
+<td>groupby_agg_int_key (P1E0 always)</td>
+</tr>
+<tr>
+<td>(outlier)</td>
+<td>IO-bound (per-API)</td>
+<td>0.23</td>
+<td>0.41</td>
+<td>n/a</td>
+<td>1</td>
+<td>read_parquet_full (P0E4 always)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="712-inference">7.1.2 Inference 흐름</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict_ratio</span><span class="p">(</span><span class="n">workload</span><span class="p">,</span> <span class="n">sample_df</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sf_hint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">_load_model</span><span class="p">()</span>                    <span class="c1"># JSON, lru_cache</span>
+    <span class="n">sf</span> <span class="o">=</span> <span class="n">sf_hint</span> <span class="ow">or</span> <span class="n">_infer_sf</span><span class="p">(</span><span class="n">sample_df</span><span class="p">)</span>     <span class="c1"># SF=1/2/5 from nrows</span>
+
+    <span class="k">if</span> <span class="n">workload</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s1">&#39;apis&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">PERatioRecommendation</span><span class="p">(</span>
+            <span class="n">pe_ratio</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">cluster_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">cluster_label</span><span class="o">=</span><span class="s1">&#39;unknown&#39;</span><span class="p">,</span>
+            <span class="n">warnings</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;unknown_workload, using safe fallback&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="n">api_meta</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s1">&#39;apis&#39;</span><span class="p">][</span><span class="n">workload</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;outlier&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">PERatioRecommendation</span><span class="p">(</span>
+            <span class="n">pe_ratio</span><span class="o">=</span><span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;raw_pe_ratio_by_sf&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sf</span><span class="p">)],</span>
+            <span class="n">cluster_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">cluster_label</span><span class="o">=</span><span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;cluster_label&#39;</span><span class="p">],</span>
+            <span class="n">outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">recommendation</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;best_cell&#39;</span><span class="p">],</span> <span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;reason&#39;</span><span class="p">]},</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">PERatioRecommendation</span><span class="p">(</span>
+        <span class="n">pe_ratio</span><span class="o">=</span><span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;raw_pe_ratio_by_sf&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sf</span><span class="p">)],</span>
+        <span class="n">cluster_id</span><span class="o">=</span><span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;cluster_id&#39;</span><span class="p">],</span>
+        <span class="n">cluster_label</span><span class="o">=</span><span class="n">api_meta</span><span class="p">[</span><span class="s1">&#39;cluster_label&#39;</span><span class="p">],</span>
+        <span class="n">outlier</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">recommendation</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="s1">&#39;P4E4&#39;</span><span class="p">,</span> <span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="s1">&#39;cluster-based default&#39;</span><span class="p">},</span>
+    <span class="p">)</span>
+</code></pre></div>
+
+<h3 id="72-validation">7.2 Validation — 그리고 그 한계의 정직한 분석</h3>
+<h4 id="721-loocv">7.2.1 LOOCV 가 무엇인가 (그리고 무엇이 <em>아닌가</em>)</h4>
+<p><strong>Leave-One-Out Cross-Validation (LOOCV)</strong>:
+1. 32 APIs 중 1개를 <em>hold-out</em> (테스트용)
+2. 나머지 31 APIs 로 cluster 재fit (K-means 새로 돌림)
+3. Hold-out API 가 어느 cluster 에 속하는지 판정 (가장 가까운 centroid)
+4. 그 cluster 의 (α, β, γ) 로 hold-out API 의 SF=2 speedup 예측
+5. 실측값과 비교 → MAPE 계산
+6. 32 APIs 모두 한 번씩 hold-out 으로 만들어 반복</p>
+<p><strong>결과</strong>: 26/32 PASS (MAPE ≤ 15%) = <strong>81%</strong>.</p>
+<h4 id="722-loocv">7.2.2 ⚠️ LOOCV 의 본질적 한계 — "쉬운 거에서 몇 개 안 보이게 테스트한 것"</h4>
+<p><strong>이 critique 는 정확하다.</strong> LOOCV 는 <strong>in-distribution generalization</strong> 만 측정한다.</p>
+<p>LOOCV 의 가정:
+- "Hold-out API 는 <em>학습한 32 APIs 와 같은 분포에서 나왔다</em>"
+- "Hold-out API 의 정확한 cluster 는 다른 31 APIs 가 알려준다"</p>
+<p>이게 만족되는 이유:
+- 32 APIs 모두 TPC-H 쿼리에서 등장 → <strong>같은 algorithmic family 의 다양한 variant</strong>
+- C1 cluster 의 23 APIs 는 모두 "row-wise simple operation" — 서로 매우 유사
+- 한 개 빼도 나머지 22 개가 같은 cluster center 만들어줌 → 빠진 1 개도 그 center 근처에 있을 가능성 높음</p>
+<p><strong>LOOCV 가 <em>측정하지 못하는</em> 것 (= 진짜 unseen data 테스트)</strong>:
+1. <strong>새로운 algorithmic family</strong>: pandas 200+ operator 중 TPC-H 에 안 나오는 것 — <code>df.pivot_table</code>, <code>df.rolling.mean</code>, <code>df.expanding.sum</code>, <code>df.cumsum</code>, <code>df.melt</code>, <code>df.stack</code>, <code>df.shift</code>, <code>df.diff</code>, <code>df.rank</code> 등.
+2. <strong>다른 backend dtype</strong>: <code>pd.Float32</code>, <code>pd.Int8</code>, <code>pd.BooleanArray</code>, <code>pd.CategoricalDtype</code> — 모두 32 APIs 에 미등장.
+3. <strong>다른 workload pattern</strong>: time-series, window function, pivoting, reshaping — Phase A 에 없음.
+4. <strong>다른 데이터 분포</strong>: TPC-H 는 균등 분포 + 합성 데이터. 실제 pandas user 의 skewed / sparse / mixed data 는 다른 contention.</p>
+<h4 id="723-c1-23-apis-2323-pass">7.2.3 C1 (23 APIs) 의 23/23 PASS 가 의미하는 것 — 그리고 의미하지 않는 것</h4>
+<p><strong>의미하는 것</strong>:
+- C1 내부 23 APIs 가 <strong>서로 매우 유사</strong>. 한 개 빼도 다른 22 개의 cluster center 가 거의 안 움직임 → hold-out 도 그 center 에 가까움 → MAPE 작음.
+- <em>"linear-scalable 워크로드들끼리는 서로 잘 예측한다"</em> 는 <strong>약한 주장</strong> 만 가능.</p>
+<p><strong>의미하지 <em>않는</em> 것</strong>:
+- "새로운 linear-scalable 워크로드 (예: <code>df.cumsum</code>) 도 잘 예측한다" — 검증 안 됨.
+- "Phase A model 이 일반적인 pandas API 에 일반화된다" — 검증 안 됨.</p>
+<p><strong>Brutal honest 한 표현</strong>: 23/23 PASS 는 <em>"C1 cluster 가 내부적으로 균일하다는 측정"</em> 일 뿐, <em>"unseen API 에 대한 generalization 증거"</em> 는 약함. 차이를 분명히 해야 함.</p>
+<h4 id="724-6-fails">7.2.4 6 fails 의 정직한 진단</h4>
+<p><strong>Fundamental physical outliers (2)</strong> — model 자체가 부적합:
+- <code>groupby_agg_int_key</code>: α=-0.34 (anti-scaling). power-law cluster model 자체가 monotonic 가정.
+- <code>read_parquet_full</code>: IO-bound. disk → page cache → decompress → pandas 의 phase 별 cost 가 hash-bound 와 완전 다른 physics.</p>
+<p>→ Per-API fallback (P1E0, P0E4 lookup) 으로 처리. <strong>Phase A 가 "model 이 안 풀린다" 고 정직 인정한 케이스</strong>.</p>
+<p><strong>Borderline cluster fails (4)</strong> — cluster heterogeneity:
+- <code>merge_chain_3tables</code>, <code>merge_inner_multikey</code>, <code>sort_values_multikey_mixed</code> (C0 cluster, 5 APIs)
+- <code>sort_descending</code> (C3 cluster, 2 APIs)
+- C0 의 α 분포 0.37 ~ 0.78 (1.6x 스프레드) → cluster center 가 LOOCV refit 마다 흔들림
+- C3 는 sample 2개라 LOOCV refit 시 1개로 fit (불안정 본질)</p>
+<p>→ "32 APIs 가 cluster 학습에 충분한가" 의 답: <strong>borderline 영역은 부족</strong>. C0/C3 에 더 많은 merge/sort variant 가 있어야 stable.</p>
+<h4 id="725-unseen-data-phase-a">7.2.5 진짜 unseen-data 테스트 (Phase A 가 안 한 것)</h4>
+<p>다음 검증이 필요했지만 Phase A 범위 밖:</p>
+<table>
+<thead>
+<tr>
+<th>검증</th>
+<th>무엇을 확인</th>
+<th>비용</th>
+<th>왜 안 했나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Held-out family test</strong>: filter family 전체 (6 APIs) 를 train 에서 제외하고 fit, 그 6 개로 test</td>
+<td>새 algorithmic family 일반화</td>
+<td>6 trials</td>
+<td>LOOCV 보다 strict, 별도 분석 안 함</td>
+</tr>
+<tr>
+<td><strong>Held-out dtype test</strong>: decimal-only 워크로드 (filter_decimal) 빼고 fit</td>
+<td>새 dtype 일반화</td>
+<td>1 trial</td>
+<td>동상</td>
+</tr>
+<tr>
+<td><strong>Non-TPC-H workload</strong>: <code>df.cumsum</code>, <code>df.rolling.mean</code>, <code>df.pivot</code> 측정 후 model 적용</td>
+<td>새 algorithmic family 일반화 (진짜 unseen)</td>
+<td>~3-5 APIs 추가 측정 + grid = 1,560-2,600 trials, ~6-8h</td>
+<td><strong>Phase A goal 외</strong>. Phase B 미루기로 결정</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Production 사용자 시나리오</strong>: bpd.auto_ratio.predict_ratio('df.pivot_table', sample_df) → 모델이 안전한 fallback (pe_ratio=1.0 + warning) 반환. <strong>정확한 추천이 아니라 fail-safe 만 검증</strong>.</p>
+<h4 id="726-realized-speedup-stage-08">7.2.6 Realized speedup (Stage 08) — 보조 검증</h4>
+<p>각 API 에 대해 model 추천 cell 적용 시 speedup (vs P1 baseline):
+- Mean 4.79x, median 5.18x
+- 19/32 ≥ 5x
+- C1 (23 APIs) 평균 5.48x</p>
+<p><strong>한계</strong>: 이 측정은 <em>학습 데이터 자체</em> 에서 best cell 의 speedup. <em>unseen API</em> 의 realized speedup 은 미측정.</p>
+<h4 id="727-unit-tests">7.2.7 Unit tests</h4>
+<p><code>tests/test_auto_ratio.py</code>:
+- 17 tests / 17 PASS
+- TestKnownWorkloads, TestSFInference, TestUnknownWorkload, TestPERatioBounds, TestClusterInfo, TestDeterminism, TestImportability
+- <strong>한계</strong>: API contract 검증 (입출력 형식, edge case 안 깨짐) 만. <em>모델 정확도</em> 와 무관.</p>
+<h3 id="73">7.3 결론: 무엇을 검증했고 무엇은 안 했나</h3>
+<table>
+<thead>
+<tr>
+<th>검증한 것</th>
+<th>검증 안 한 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>✅ 32 APIs 내부 LOOCV: 81% (26/32)</td>
+<td>❌ 새 pandas API (rolling/cumsum/pivot) 일반화</td>
+</tr>
+<tr>
+<td>✅ C1 (23 linear-scalable) 의 내부 homogeneity</td>
+<td>❌ 새 algorithmic family 일반화</td>
+</tr>
+<tr>
+<td>✅ Fundamental outlier 2개 identify</td>
+<td>❌ 새 dtype (Float32, Int8, Category) 일반화</td>
+</tr>
+<tr>
+<td>✅ Cluster borderline 4 fails 식별</td>
+<td>❌ 다른 하드웨어 (Arrow Lake, Sapphire Rapids) 일반화</td>
+</tr>
+<tr>
+<td>✅ SF=1↔SF=2 cluster stability 100%</td>
+<td>❌ End-to-end TPC-H query 실행 시 효과</td>
+</tr>
+<tr>
+<td>✅ API contract (overhead, edge case)</td>
+<td>❌ Production pandas workload 검증</td>
+</tr>
+</tbody>
+</table>
+<p><strong>최종 honest claim</strong>: "Phase A 모델은 TPC-H 32 APIs 의 동일 family 내부에서 81% LOOCV 정확도를 달성한다. <strong>진정한 unseen API 일반화는 Phase B 에서 추가 측정 후 검증한다.</strong>"</p>
+<hr />
+<h2 id="8">8. 한계와 향후 과제</h2>
+<h3 id="81">8.1 측정 한계</h3>
+<table>
+<thead>
+<tr>
+<th>한계</th>
+<th>영향</th>
+<th>향후</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32 APIs (TPC-H 중심)</td>
+<td>pandas 200+ operator 의 일부</td>
+<td>추가 API 측정 시 cluster generalization 재검증</td>
+</tr>
+<tr>
+<td>SF=5 부분 측정 (8/32)</td>
+<td>cache pressure 효과 일부만 확인</td>
+<td>30 APIs × 24 cells × 13 reps ~25-30h (FW-7)</td>
+</tr>
+<tr>
+<td>단일 lookup table (TPC-H)</td>
+<td>join 효과 TPC-H 시나리오에 한정</td>
+<td>다른 lookup 크기/분포</td>
+</tr>
+<tr>
+<td>Single hardware (Lunar Lake)</td>
+<td>일반화 미검증</td>
+<td>Arrow Lake / Sapphire Rapids / AMD Bergamo 측정</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82">8.2 모델링 한계</h3>
+<h4 id="821-cluster-boundary-heterogeneity">8.2.1 Cluster boundary heterogeneity</h4>
+<ul>
+<li>C0 (5 APIs hash-bound) 내 α 분포 0.37-0.78 (1.6x 스프레드) — <strong>borderline 4 LOOCV fails 의 원인</strong></li>
+<li>해결책 후보:</li>
+<li>(a) C0 surgical SF=5 측정 (7 APIs × 24 cells = 2,184 trials, ~6h) → C0 sub-split</li>
+<li>(b) C0를 hash와 sort로 분리 (multikey 하나 떠올라야 함)</li>
+</ul>
+<h4 id="822-inter-op">8.2.2 Inter-op 미커버</h4>
+<ul>
+<li>현재 model은 <strong>single-op intra-op PE ratio</strong> 만 예측</li>
+<li>bpd의 stated final goal: inter-op parallelization (독립적 op 들을 다른 core에 할당) + intra-op</li>
+<li>Inter-op decision의 input (per-op bandwidth, compute intensity, co-run interference matrix) <strong>현재 model에 없음</strong></li>
+<li>Phase B 작업: NuCore IP solver</li>
+</ul>
+<h4 id="823-co-run-interference">8.2.3 Co-run interference 미측정</h4>
+<ul>
+<li>γ는 single workload의 P/E co-run만 capture</li>
+<li>실제 inter-op 상황: op A 를 P-cluster + op B 를 E-cluster 동시 실행 → cross-op interference</li>
+<li>PCCS (MICRO'21) 의 cross-cluster external-demand combiner 구현 필요</li>
+<li>새 Stage 09 (co-run grid): 4 cluster 대표 op × 4 cluster 대표 op × 4 placement = 64 cells</li>
+</ul>
+<h3 id="83-feature-engineering">8.3 Feature engineering 한계</h3>
+<h4 id="831-vtune-memory-features">8.3.1 VTune memory features 미통합</h4>
+<ul>
+<li>FW-6b에서 8 APIs DRAM BW / memory-bound % 측정 완료</li>
+<li>32 APIs 확장 미완 (~3-4h 필요)</li>
+<li>Correlation analysis 미수행: <code>corr(γ, dram_bw)</code>, <code>corr(α, memory_bound %)</code></li>
+<li>통합 절차:
+  1. 32 APIs VTune memory 측정
+  2. Correlation check (gate: |r| &gt; 0.6)
+  3. Pass 시 6번째 clustering feature 추가
+  4. Stages 05-07 재실행 + LOOCV 비교
+  5. Improvement &lt; +3% pass count 면 paper 에 "decoration" 으로만 인용</li>
+</ul>
+<h4 id="832-cardinality-estimator">8.3.2 Cardinality estimator 부재</h4>
+<ul>
+<li>sample_df 기반 cardinality 추정 미구현</li>
+<li>현재 model은 nrows 만 SF 추론에 사용</li>
+<li>향후: <code>df[key].nunique() / len(df)</code> 추가하면 hash join cost prediction 정확도 ↑</li>
+</ul>
+<h3 id="84-end-to-end">8.4 End-to-End 미검증</h3>
+<ul>
+<li>TPC-H Q1-Q22 end-to-end 실행 시 model 추천이 실제 query 성능 개선하는지 미확인</li>
+<li>가장 중요한 future work — 없으면 paper-level contribution 약함</li>
+</ul>
+<hr />
+<h2 id="9">9. 결론</h2>
+<h3 id="91-phase-a">9.1 Phase A 가 증명한 것</h3>
+<ol>
+<li><strong>Hybrid CPU (P/E) 에서 pandas API 의 PE ratio는 K-means cluster + per-cluster (α, β, γ) 로 일반화 가능</strong>. 32 APIs LOOCV 81% 입증.</li>
+<li><strong>Curve-shape feature (scaling exponent) 가 point feature (raw_pe_ratio) 보다 cluster 분리에 결정적</strong>. 동일 알고리즘으로 43% → 81% 개선.</li>
+<li><strong>Anti-scaling outlier 와 IO-bound outlier 는 별도 처리 필수</strong>. cluster model 자체가 부적합.</li>
+<li><strong>Lunar Lake LPI 의 cross-cluster contention은 단일 scalar γ 로 modeling 가능</strong> (DRAM bandwidth proxy).</li>
+</ol>
+<h3 id="92-phase-a">9.2 Phase A 가 증명하지 못한 것</h3>
+<ol>
+<li><strong>Inter-op parallelization 효과</strong> — model output이 inter-op 의사결정에 어떻게 쓰이는지 미검증</li>
+<li><strong>Co-run interference 모델링</strong> — operator pair 간 cross-cluster slowdown 미측정</li>
+<li><strong>End-to-end query 성능</strong> — TPC-H Q1-Q22 실행 시 model 추천이 실제 wall time 개선하는지 미확인</li>
+<li><strong>다른 hardware 일반화</strong> — Lunar Lake 외 platform 미측정</li>
+</ol>
+<h3 id="93-phase-b">9.3 Phase B의 우선순위</h3>
+<p>서베이 (<code>docs/memo/0508_survey.html</code>) 의 권고 + 본 리포트 한계 분석 결합:</p>
+<ol>
+<li><strong>Stage 09 (co-run grid)</strong> — 4 representative op × 4 placement × 5 reps = 64 cells, ~6h. Inter-op cost model의 핵심 input.</li>
+<li><strong>VTune memory feature 통합</strong> — 32 APIs × VTune ~3-4h + correlation check.</li>
+<li><strong>TPC-H end-to-end harness</strong> — bpd-pandas + Polars + DuckDB 비교, Q1/Q3/Q6/Q14 4개 query × 2 SFs × 5 reps = 40 trials.</li>
+<li><strong>NuCore IP solver</strong> (PoC) — 4 op × 4 cell × bandwidth constraint → optimal assignment.</li>
+</ol>
+<h3 id="94">9.4 산출물 인덱스</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">dev</span><span class="o">/</span><span class="mi">260507</span><span class="n">_api_pe_model</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">00</span><span class="o">-</span><span class="n">data</span><span class="o">-</span><span class="n">prep</span><span class="o">/</span><span class="w">                       </span><span class="c1"># TPC-H parquet (SF=1/2/5)</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">01</span><span class="o">-</span><span class="n">api</span><span class="o">-</span><span class="n">coverage</span><span class="o">/</span><span class="w">                    </span><span class="c1"># smoke harness + dtype 분석</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">02</span><span class="o">-</span><span class="n">feature</span><span class="o">-</span><span class="n">extraction</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">_features</span><span class="o">.</span><span class="n">py</span><span class="w">                    </span><span class="c1"># static feature extractor (29 cols)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">features</span><span class="o">.</span><span class="n">csv</span><span class="w">                    </span><span class="c1"># 32 rows × 29 cols</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">03</span><span class="o">-</span><span class="n">calibration</span><span class="o">-</span><span class="n">grid</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">calibration_phaseA</span><span class="o">.</span><span class="n">csv</span><span class="w">          </span><span class="c1"># P1/E1 × 3 SFs, 96 rows</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">vtune_ops</span><span class="o">/</span><span class="w">                      </span><span class="c1"># FW-6 OPS_PER_ROW (8 APIs)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">vtune_memory</span><span class="o">/</span><span class="w">                   </span><span class="c1"># FW-6b DRAM BW / mem-bound % (8 APIs)</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">04</span><span class="o">-</span><span class="n">contention</span><span class="o">-</span><span class="n">grid</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">contention_grid_phaseA</span><span class="o">.</span><span class="n">csv</span><span class="w">      </span><span class="c1"># 1,536 rows (32×2 SFs × 24 cells)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">contention_grid_phaseA_sf5_partial</span><span class="o">.</span><span class="n">csv</span><span class="w">   </span><span class="c1"># 198 rows (9 APIs)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">stage04_phaseA_features</span><span class="o">.</span><span class="n">csv</span><span class="w">     </span><span class="c1"># curve-shape features per (workload, sf)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">report_phaseA</span><span class="o">.</span><span class="n">md</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">05</span><span class="o">-</span><span class="n">categorization</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">category_map_phaseA</span><span class="o">.</span><span class="n">json</span><span class="w">        </span><span class="c1"># K=4 cluster assignments</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">silhouette_scores_phaseA</span><span class="o">.</span><span class="n">csv</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">report_phaseA</span><span class="o">.</span><span class="n">md</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">06</span><span class="o">-</span><span class="n">coefficient</span><span class="o">-</span><span class="n">regression</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">model_wall_phaseA</span><span class="o">.</span><span class="n">json</span><span class="w">          </span><span class="c1"># per-cluster (α, β, γ)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">fit_summary_phaseA</span><span class="o">.</span><span class="n">csv</span><span class="w">          </span><span class="c1"># per-(cluster, api) breakdown</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">report_phaseA</span><span class="o">.</span><span class="n">md</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">07</span><span class="o">-</span><span class="n">cross</span><span class="o">-</span><span class="n">api</span><span class="o">-</span><span class="n">validation</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">hybrid_model_k4</span><span class="o">.</span><span class="n">json</span><span class="w">            </span><span class="c1"># K=4 + 2 outlier (FINAL Phase A model)</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">loocv_results_k4_hybrid</span><span class="o">.</span><span class="n">csv</span><span class="w">     </span><span class="c1"># 32 rows × 11 cols</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">report_phaseA</span><span class="o">.</span><span class="n">md</span>
+<span class="err">├──</span><span class="w"> </span><span class="mi">08</span><span class="o">-</span><span class="n">validation</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">measure_overhead</span><span class="o">.</span><span class="n">py</span><span class="w">             </span><span class="c1"># predict_ratio() microbench</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">validate_e2e</span><span class="o">.</span><span class="n">py</span><span class="w">                 </span><span class="c1"># realized speedup</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">validation_results</span><span class="o">.</span><span class="n">csv</span><span class="w">          </span><span class="c1"># 32 rows × 11 cols</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">report</span><span class="o">.</span><span class="n">md</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">PHASE_A_PUBLIC_REPORT</span><span class="o">.</span><span class="n">md</span><span class="w">            </span><span class="c1"># non-expert summary</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">PHASE_1_FINAL_REPORT</span><span class="o">.</span><span class="n">md</span><span class="w">             </span><span class="c1"># Phase 1 closure</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">PHASE_A_TECHNICAL_REPORT</span><span class="o">.</span><span class="n">md</span><span class="w">         </span><span class="c1"># 본 문서</span>
+
+<span class="n">bpd</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">auto_ratio</span><span class="o">.</span><span class="n">py</span><span class="w">                       </span><span class="c1"># predict_ratio() public API</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">models</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">pe_ratio_model_lunar_lake</span><span class="o">.</span><span class="n">json</span><span class="w">  </span><span class="c1"># FINAL model file (1.4 KB JSON)</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">ops</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">tpch_ops</span><span class="o">.</span><span class="n">py</span><span class="w">                     </span><span class="c1"># 32 worker functions + dispatch</span>
+
+<span class="n">tests</span><span class="o">/</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">test_auto_ratio</span><span class="o">.</span><span class="n">py</span><span class="w">                  </span><span class="c1"># 17 tests, all pass</span>
+</code></pre></div>
+
+<hr />
+<h2 id="10-references">10. References</h2>
+<h3 id="101-internal-artifacts">10.1 Internal artifacts</h3>
+<ul>
+<li><code>docs/memo/260508-meeting.md</code> — 랩미팅 피드백 (scope narrowing + survey)</li>
+<li><code>docs/memo/0508_survey.html</code> — 40+ paper survey (Cylon, MemGuard, PCCS, Qilin, StarPU, Catalán, Bilbao, Saez, NuCore)</li>
+<li><code>dev/260403_rowwise_read_io/06-vtune-profiling/report.md</code> — process-state drift 발견 (C.13-C.16)</li>
+</ul>
+<h3 id="102-survey-paper-claim">10.2 Survey 외부 참고 (paper claim 시 인용)</h3>
+<ul>
+<li><strong>Cylon (Perera et al., PPAM'22)</strong> — 5-pattern taxonomy (embarrassingly parallel / globally reduce / shuffle-compute / combine-shuffle-reduce / sort-range)</li>
+<li><strong>Modin (Petersohn et al., PVLDB'22)</strong> — 6-template rule-based decomposition</li>
+<li><strong>MemGuard (Yun et al., RTAS'13)</strong> — DRAM bandwidth reservation via PMC LLC-miss proxy</li>
+<li><strong>Bandwidth Bandit (Eklov et al., CGO'13)</strong> — bandwidth contention 측정 방법론</li>
+<li><strong>PCCS (Chen et al., MICRO'21)</strong> — heterogeneous SoC PU별 slowdown 모델</li>
+<li><strong>Saez et al. APSys'22</strong> — PMC 학습 ML SF 예측기 + decision thresholds (SF gap ≥2.05 → P-pin, ≤1.7 → inverse-SF, 1.7-2.05 → bandwidth check)</li>
+<li><strong>Bilbao et al. CCPE'23</strong> — PMCSched / AID-static, Alder Lake OpenMP 루프</li>
+<li><strong>Qilin (Luk et al., MICRO'09)</strong> — CPU+GPU 적응형 매핑</li>
+<li><strong>StarPU (Augonnet et al., Euro-Par'09)</strong> — codelet 고정 + 스케줄러 플러그형</li>
+<li><strong>Catalán et al. (TACO'16)</strong> — big.LITTLE 위 BLIS GEMM, 커널 고정 + 매핑 적응</li>
+<li><strong>NuCore (HPCA'16)</strong> — heterogeneous core placement IP</li>
+</ul>
+<h3 id="103-architectural-context">10.3 Architectural context</h3>
+<ul>
+<li><strong>Schöne et al. (ICPE'24)</strong> — Alder Lake 가장 강력한 특성화 (L3 공유)</li>
+<li><strong>McCore (MICRO'23)</strong> — small core LLC/bandwidth 불균형 소비</li>
+<li><strong>Lunar Lake LPI</strong> — peer-reviewed paper 부재 (bpd 실증적 contribution opportunity)</li>
+</ul>
+</main>
+<footer>
+  <p>본 리포트는 markdown → HTML 자동 변환 + GitHub Gist 배포 도구로 생성되었습니다.</p>
+  <p>Generated by <code>_scripts/publish_report_html.py</code></p>
+</footer>
+</div>
+</body>
+</html>
