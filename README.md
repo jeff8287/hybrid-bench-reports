@@ -2,16 +2,11 @@
 
 Public HTML reports for the [hybrid-bench](https://github.com/jeff8287/hybrid-bench) research project — Intel Lunar Lake (4P+4E) 하이브리드 CPU 의 pandas 작업 자동 튜닝.
 
-## Reports (latest first)
+## Reports
 
 | Date | Report | Description |
 |------|--------|-------------|
-| **2026-05-15** | [**🌟 Phase A FINAL — Narrative Report**](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_FINAL_REPORT.html) | **종합 보고서**. 7 Discoveries (curve-shape features → 3+1 clusters → SF-aware drift → light-calib protocol → unseen API gen → boundary robustness → honest limits). SF=5 측정 추가로 7/21 workloads 가 linear→hash drift 발견. |
-| 2026-05-13 | [Phase A Technical Report (v2)](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_TECHNICAL_REPORT.html) | 예측 모델 / Contention / Feature Engineering 종합 + Light-Calib Protocol. (PHASE_A_FINAL 으로 supersede) |
-| 2026-05-13 | [Stage 4 SF=5 Partial](https://jeff8287.github.io/hybrid-bench-reports/STAGE_4_SF5_PARTIAL.html) | SF=5 측정 부분 결과 (8/32 workloads). 이후 21/32 까지 확장 — [FINAL report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_FINAL_REPORT.html) 참조. |
-| 2026-05-12 | [Phase 1 Final](https://jeff8287.github.io/hybrid-bench-reports/PHASE_1_FINAL_REPORT.html) | Phase 1 종료 — `bpd.auto_ratio.predict_ratio()` API 출시. LOOCV 81%. |
-| 2026-05-12 | [Stage 8 Validation](https://jeff8287.github.io/hybrid-bench-reports/STAGE_8_VALIDATION_REPORT.html) | predict_ratio() overhead < 0.003%, realized speedup 4.79x mean. |
-| 2026-05-12 | [Phase A Public Report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_PUBLIC_REPORT.html) | Phase A 초기 결과 (32 APIs × 2 SFs). |
+| 2026-05-15 | [**Phase A Final — Narrative Report**](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_FINAL_REPORT.html) | 종합 보고서. 7 Discoveries (curve-shape features → 3+1 clusters → SF-aware drift → light-calib protocol → unseen API gen → boundary robustness → honest limits). 32 APIs × 3 SFs (1/2/5) × 24 cells × 13 reps. LOOCV 81% in-distribution. |
 
 ## Project structure (high-level)
 
@@ -31,14 +26,14 @@ dev/260507_api_pe_model/                   # 실험 디렉토리
 전체 파이프라인 (Stage 0-9) 상세는 [PLAN.md](https://github.com/jeff8287/hybrid-bench/blob/master/dev/260507_api_pe_model/PLAN.md) 참조.
 
 ### Phase A 측정 규모
-- **32 APIs** × **3 SFs (1, 2, 5)** × **24 cells** × **13 reps** = 9,216 cell measurements
-- 총 wall: ~80h (3 sessions, shutdowns 발생)
+- 32 APIs × 3 SFs (1, 2, 5) × 24 cells × 13 reps = 9,216 cell measurements
+- 총 wall: ~80h (multiple sessions)
 - 0 errors, AC-04 PASS
 
 ### Phase A 핵심 결과
 - LOOCV (in-distribution): **81% pass** (26/32 ≤ 15% MAPE)
 - SF-aware cluster drift: 7/21 workloads (filter, groupby_agg, ...) 가 SF=5 에서 linear → hash
-- C_linear cluster MAPE: **6.8-7.5%** (robust across SFs)
+- C_linear cluster MAPE: 6.8-7.5% (robust across SFs)
 - C0_hash cluster MAPE: 12-23% (heterogeneous, especially SF=5)
 - predict_ratio overhead: < 5 μs per call
 
