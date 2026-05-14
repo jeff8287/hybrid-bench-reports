@@ -2,20 +2,46 @@
 
 Public HTML reports for the [hybrid-bench](https://github.com/jeff8287/hybrid-bench) research project — Intel Lunar Lake (4P+4E) 하이브리드 CPU 의 pandas 작업 자동 튜닝.
 
-## Reports
+## Reports (latest first)
 
 | Date | Report | Description |
 |------|--------|-------------|
-| 2026-05-13 | [**Phase A Technical Report**](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_TECHNICAL_REPORT.html) | **NEW** — 예측 모델 / Contention / Feature Engineering 종합 기술 리포트. 32 APIs 전체 명세, K-means clustering intuition + math, LOOCV 의 in-distribution 한계 정직 분석. |
-| 2026-05-12 | [Phase 1 Final](https://jeff8287.github.io/hybrid-bench-reports/PHASE_1_FINAL_REPORT.html) | Phase 1 종료 — `bpd.auto_ratio.predict_ratio()` API 출시. 32 APIs, K=4 hybrid, LOOCV 81% 통과. |
-| 2026-05-12 | [Stage 8 Validation](https://jeff8287.github.io/hybrid-bench-reports/STAGE_8_VALIDATION_REPORT.html) | predict_ratio() overhead < 0.003%, realized speedup 4.79x mean, 87% APIs ≥ 3x. |
-| 2026-05-13 | [Stage 4 SF=5 Partial](https://jeff8287.github.io/hybrid-bench-reports/STAGE_4_SF5_PARTIAL.html) | SF=5 contention grid partial (8/32 workloads). filter, merge_singkey scaling 악화 (cache pressure), column_arith/sort 향상. |
-| 2026-05-12 | [Phase A Public Report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_PUBLIC_REPORT.html) | Phase A 측정 결과 — 32 APIs × 2 SFs contention grid (38h), 4 작업 유형 분류, Codex 가설 검증 (43%→81%). |
+| **2026-05-15** | [**🌟 Phase A FINAL — Narrative Report**](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_FINAL_REPORT.html) | **종합 보고서**. 7 Discoveries (curve-shape features → 3+1 clusters → SF-aware drift → light-calib protocol → unseen API gen → boundary robustness → honest limits). SF=5 측정 추가로 7/21 workloads 가 linear→hash drift 발견. |
+| 2026-05-13 | [Phase A Technical Report (v2)](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_TECHNICAL_REPORT.html) | 예측 모델 / Contention / Feature Engineering 종합 + Light-Calib Protocol. (PHASE_A_FINAL 으로 supersede) |
+| 2026-05-13 | [Stage 4 SF=5 Partial](https://jeff8287.github.io/hybrid-bench-reports/STAGE_4_SF5_PARTIAL.html) | SF=5 측정 부분 결과 (8/32 workloads). 이후 21/32 까지 확장 — [FINAL report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_FINAL_REPORT.html) 참조. |
+| 2026-05-12 | [Phase 1 Final](https://jeff8287.github.io/hybrid-bench-reports/PHASE_1_FINAL_REPORT.html) | Phase 1 종료 — `bpd.auto_ratio.predict_ratio()` API 출시. LOOCV 81%. |
+| 2026-05-12 | [Stage 8 Validation](https://jeff8287.github.io/hybrid-bench-reports/STAGE_8_VALIDATION_REPORT.html) | predict_ratio() overhead < 0.003%, realized speedup 4.79x mean. |
+| 2026-05-12 | [Phase A Public Report](https://jeff8287.github.io/hybrid-bench-reports/PHASE_A_PUBLIC_REPORT.html) | Phase A 초기 결과 (32 APIs × 2 SFs). |
 
-## Method
+## Project structure (high-level)
 
-전체 파이프라인 (Stage 0-8) 상세는 [PLAN.md](https://github.com/jeff8287/hybrid-bench/blob/master/dev/260507_api_pe_model/PLAN.md) 참조.
+```
+bpd/                                       # 라이브러리
+├── auto_ratio.py                          # public predict_ratio() API (SF-aware)
+├── models/pe_ratio_model_lunar_lake_sf_aware.json
+└── ops/{tpch_ops, extended_ops}.py        # 32 + 5 workloads
+
+dev/260507_api_pe_model/                   # 실험 디렉토리
+├── 00-data-prep ~ 09-tier2-unseen/        # 10 stages
+└── PHASE_A_FINAL_REPORT.md                # 본 보고서의 소스
+```
+
+## Method (high-level)
+
+전체 파이프라인 (Stage 0-9) 상세는 [PLAN.md](https://github.com/jeff8287/hybrid-bench/blob/master/dev/260507_api_pe_model/PLAN.md) 참조.
+
+### Phase A 측정 규모
+- **32 APIs** × **3 SFs (1, 2, 5)** × **24 cells** × **13 reps** = 9,216 cell measurements
+- 총 wall: ~80h (3 sessions, shutdowns 발생)
+- 0 errors, AC-04 PASS
+
+### Phase A 핵심 결과
+- LOOCV (in-distribution): **81% pass** (26/32 ≤ 15% MAPE)
+- SF-aware cluster drift: 7/21 workloads (filter, groupby_agg, ...) 가 SF=5 에서 linear → hash
+- C_linear cluster MAPE: **6.8-7.5%** (robust across SFs)
+- C0_hash cluster MAPE: 12-23% (heterogeneous, especially SF=5)
+- predict_ratio overhead: < 5 μs per call
 
 ## Tooling
 
-리포트 자동 배포: `.claude/skills/publish-report-html/` skill (markdown → HTML → GitHub Pages).
+리포트 자동 배포: `.claude/skills/publish-report-html/` (markdown → HTML → GitHub Pages).
