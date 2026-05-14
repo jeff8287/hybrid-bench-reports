@@ -161,7 +161,7 @@ footer {
 <div class="container">
 <header class="hero">
   <h1>bpd Phase A — Final Narrative Report</h1>
-  <div class="tagline">Hybrid CPU PE Ratio 자동 추천 모델: 7 Discoveries, 32 APIs × 3 SFs, SF-aware cluster drift, LOOCV 81% in-distribution</div>
+  <div class="tagline">Hybrid CPU PE Ratio 자동 추천 모델 + 29 static features 검토 + 5 clustering features 선정 근거</div>
   <div class="meta">생성일: 2026-05-15 · 자동 빌드 (publish-report-html)</div>
 </header>
 <nav class="toc"><h2>목차</h2><ul>
@@ -187,6 +187,7 @@ footer {
   <li><a href="#42-attempt-2-성공-curve-shape-feature">4.2 Attempt 2 (성공): Curve-shape feature</a></li>
   <li><a href="#43-5-curve-shape-features">4.3 5 Curve-shape Features</a></li>
   <li><a href="#44-결과-32-apis-5-features-k-means-k4">4.4 결과 (32 APIs, 5 features, K-means K=4)</a></li>
+  <li><a href="#45-static-features-는-왜-cluster-input-에서-제외했나">4.5 Static features 는 왜 cluster input 에서 제외했나</a></li>
 <li><a href="#5-discovery-2-31-behavioral-clusters">5. Discovery 2 — 3+1 Behavioral Clusters</a></li>
   <li><a href="#51-k4-cluster-sf1-기준">5.1 K=4 Cluster (SF=1 기준)</a></li>
   <li><a href="#52-각-cluster-의-의미">5.2 각 cluster 의 의미</a></li>
@@ -515,6 +516,78 @@ ws_B:  100   85    80    75          saturated (~1.3x speedup at P4)
 <li><strong>2x improvement vs point feature</strong></li>
 </ul>
 <p>→ <strong>H1 (behavioral clustering) 검증</strong>: scaling exponent 가 곧 cluster identity.</p>
+<h3 id="45-static-features-cluster-input">4.5 Static features 는 왜 cluster input 에서 제외했나</h3>
+<p><code>dev/260507_api_pe_model/02-feature-extraction/_features.py</code> 가 추출하는 29 개 static feature (nrows, dtypes, cardinality, OI 등) 가 있지만, <strong>clustering input 으로는 단 하나만 사용</strong> (<code>io_strategy</code>, IO outlier 검출용). 나머지는 informational only. 각 feature 의 제외 이유:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>후보였던 이유</th>
+<th>제외 이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input_dtype_ratio_*</code> (5 bins: numeric/decimal/datetime/string/other)</td>
+<td>dtype 이 비용 좌우</td>
+<td><strong>Categorical bin → OOD void</strong>: 사용자가 새 dtype (e.g., <code>pd.Float32</code>, <code>pd.Int8</code>, <code>pd.CategoricalDtype</code>) 으로 호출 시 어느 bin 에도 안 떨어짐. 대체로 continuous <code>input_avg_bytes_per_element</code> + binary <code>input_has_decimal</code> 채택</td>
+</tr>
+<tr>
+<td><code>OI / oi_estimate</code> (Operational Intensity)</td>
+<td>Roofline model 표준 metric</td>
+<td><strong>pandas 에서 무용</strong>: pandas operator 는 거의 memcpy + comparison (FLOPs ≈ 0) → OI 모든 API 에서 ≈ 0 → cluster 분리력 0</td>
+</tr>
+<tr>
+<td><code>vtune_memory_bound_pct</code>, <code>vtune_dram_bw_avg_gbs</code> (VTune Top-down)</td>
+<td>OI 보다 더 적합한 cause 신호</td>
+<td><strong>8 APIs only 측정</strong>, 32 APIs 확장 미완. correlation analysis 미수행 → 추가 후보 features 로 검토 (Phase B)</td>
+</tr>
+<tr>
+<td><code>selectivity_estimate</code></td>
+<td>filter 류 비용 좌우</td>
+<td><strong>Workload-specific</strong>: filter / str_endswith 에만 존재. 모든 cluster 에 invariant 한 feature 아님 → category-conditional 한 feature 는 K-means input 부적합</td>
+</tr>
+<tr>
+<td><code>nrows</code>, <code>input_nbytes</code></td>
+<td>데이터 크기 (cost 의 핵심 driver)</td>
+<td><strong>Absolute scale → predict-time online inference 로 분리</strong>: 측정값은 데이터 크기에 dependent 하지만, sample_df 의 <code>len()</code> 으로 SF 추론 후 SF-specific raw_pe_ratio 적용. cluster 분류는 SF-invariant 한 <em>모양</em> 으로.</td>
+</tr>
+<tr>
+<td><code>raw_pe_ratio</code> (Stage 03 calibration)</td>
+<td>P/E single-core 속도비</td>
+<td><strong>α, β 와 redundant</strong>: α 는 t_P1/t_P4, β 는 t_E1/t_E4 — 동일 측정값에서 raw_pe_ratio (= t_E1/t_P1) derivable. K-means 의 euclidean distance 가 같은 정보를 두 번 받아 weight 왜곡. <strong>K=3 silhouette: 7-feature (full) 0.22 → 4-feature (subset) 0.25 → 3-feature (core) 0.47</strong> — feature 줄일수록 silhouette 향상 (실험 §5.2.3 cluster_features.csv 참조)</td>
+</tr>
+<tr>
+<td><code>nbytes</code>, <code>avg_row_bytes</code>, <code>output_rows_estimate</code>, <code>output_n_cols</code></td>
+<td>데이터/결과 크기</td>
+<td><strong>모두 absolute scale, point measurement</strong>. scaling regime 의 <em>모양</em> 정보 없음</td>
+</tr>
+<tr>
+<td><code>merge_strategy</code>, <code>splittable</code>, <code>arity</code>, <code>is_inplace</code>, <code>lookup_table</code></td>
+<td>Workload metadata (categorical)</td>
+<td><strong>분류 자체에 categorical bin 문제</strong>. 또한 cluster identity 가 algorithmic taxonomy 와 다르다는 것이 §5.3 의 발견 — <code>merge_anti</code> 가 C_linear, <code>sort_values_multikey_mixed</code> 가 C0_hash 같은 패턴. 즉 metadata 로 cluster 못 정함</td>
+</tr>
+<tr>
+<td><code>ops_per_row_estimate</code> (VTune-calibrated)</td>
+<td>명령어 수 (compute 지표)</td>
+<td>측정은 했지만 <strong>Python+pandas+pyarrow wrapper overhead (~4000-5000 inst/row) 가 모든 워크로드 floor</strong> → operator 간 차이 약함. cluster 분리력 제한적</td>
+</tr>
+</tbody>
+</table>
+<h4 id="5-static-feature-engineering">핵심 원칙 5가지 (static feature engineering 교훈)</h4>
+<ol>
+<li><strong>Curve-shape &gt; point measurement</strong>: cluster identity 는 "P 가 몇 배 빠른가" (1 차원) 가 아니라 "코어 추가 시 어떻게 scaling 하는가" (다차원 곡선 모양). α, β, γ 가 이 모양을 capture.</li>
+<li><strong>OI 는 pandas 에서 무용</strong>: FLOPs ≈ 0. Roofline-style compute-intensity metric 은 numerical kernels 용. pandas 는 메모리-바운드라 "memory_bound %" 가 필요하지만 VTune 32 APIs 측정 미완.</li>
+<li><strong>Categorical bins 는 위험</strong>: OOD void (unseen dtype/strategy) 생성 → continuous feature (avg_bytes_per_element) 대체.</li>
+<li><strong>Skewed feature 는 log1p 필수</strong>: K-means euclidean distance 가 outlier (sort 류의 merge_share, anti-scaling 의 anti_score) 에 끌려가지 않도록.</li>
+<li><strong>Absolute scale 은 online inference 로</strong>: sample_df 가 매번 다른 크기로 호출되므로, cluster 분류는 SF-invariant 한 정보로, 데이터 크기 효과는 predict-time <code>_infer_sf()</code> 로 분리.</li>
+</ol>
+<h4 id="_3">결론</h4>
+<ul>
+<li><strong>Cluster input 5 features (모두 측정 derived, scaling-shape)</strong> + <strong>Outlier 검출 1 static bit (<code>io_strategy</code>)</strong> = 모델의 진짜 입력</li>
+<li><strong>나머지 29 static features 는 informational only</strong> (Stage 02 features.csv 에 저장되어 분석/디버깅용으로 보존)</li>
+<li><strong>Phase B 후보</strong>: VTune memory_bound_pct / dram_bw 32 APIs 확장 + correlation gate (|r| ≥ 0.6) 통과 시 6번째 clustering feature 로 승격</li>
+</ul>
 <hr />
 <h2 id="5-discovery-2-31-behavioral-clusters">5. Discovery 2 — 3+1 Behavioral Clusters</h2>
 <h3 id="51-k4-cluster-sf1">5.1 K=4 Cluster (SF=1 기준)</h3>
