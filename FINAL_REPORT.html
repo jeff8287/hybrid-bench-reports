@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BW-Aware Latency Prediction on Lunar Lake - Final Report</title>
+<style>
+:root {
+    --bg: #fafbfc;
+    --fg: #24292e;
+    --accent: #0366d6;
+    --accent-soft: #dbedff;
+    --muted: #586069;
+    --border: #e1e4e8;
+    --code-bg: #f6f8fa;
+    --highlight: #fff8c4;
+    --table-stripe: #f6f8fa;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+                 "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.65;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+header.hero {
+    background: linear-gradient(135deg, #0366d6 0%, #044289 100%);
+    color: white;
+    padding: 48px 24px;
+    margin: -40px -24px 32px;
+}
+header.hero h1 {
+    margin: 0;
+    font-size: 2.4rem;
+    line-height: 1.2;
+}
+header.hero .tagline {
+    margin-top: 12px;
+    font-size: 1.15rem;
+    opacity: 0.95;
+}
+header.hero .meta {
+    margin-top: 16px;
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+h1, h2, h3, h4 {
+    color: var(--fg);
+    font-weight: 600;
+    line-height: 1.3;
+}
+h2 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-top: 48px;
+}
+h3 { margin-top: 32px; }
+p { margin: 12px 0; }
+ul, ol { padding-left: 24px; }
+li { margin: 4px 0; }
+strong { color: #0366d6; }
+em { color: var(--muted); font-style: italic; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace;
+    font-size: 0.92em;
+}
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-size: 0.88em;
+    line-height: 1.5;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.94em;
+}
+th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+}
+th {
+    background: var(--accent-soft);
+    font-weight: 600;
+}
+tr:nth-child(even) td { background: var(--table-stripe); }
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: block;
+    margin: 20px auto;
+}
+blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+}
+.callout {
+    background: var(--highlight);
+    border-left: 4px solid #d4a72c;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+}
+.toc {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 24px;
+    margin: 24px 0 32px;
+}
+.toc h2 { margin-top: 0; border: 0; padding: 0; font-size: 1.1rem; }
+.toc ul { padding-left: 20px; margin: 8px 0; }
+.toc li { margin: 2px 0; }
+.toc a { color: var(--fg); }
+.toc a:hover { color: var(--accent); }
+hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.88em;
+    text-align: center;
+}
+@media (max-width: 600px) {
+    header.hero h1 { font-size: 1.7rem; }
+    .container { padding: 24px 16px 48px; }
+    header.hero { padding: 28px 16px; margin: -24px -16px 24px; }
+    table { font-size: 0.85em; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header class="hero">
+  <h1>BW-Aware Latency Prediction on Lunar Lake - Final Report</h1>
+  <div class="tagline">6-phase research summary: from 6% Bandit MAPE to 18.5% production model</div>
+  <div class="meta">생성일: 2026-05-28 · 자동 빌드 (publish-report-html)</div>
+</header>
+<nav class="toc"><h2>목차</h2><ul>
+<li><a href="#executive-summary">Executive Summary</a></li>
+  <li><a href="#research-question">Research Question</a></li>
+  <li><a href="#headline-results">Headline Results</a></li>
+  <li><a href="#production-ready-model-no-cache-no-admin">Production-ready model (no cache, no admin)</a></li>
+  <li><a href="#headline-findings">Headline Findings</a></li>
+<li><a href="#1-research-goals">1. Research Goals</a></li>
+  <li><a href="#why-this-matters">Why this matters</a></li>
+<li><a href="#2-phase-별-progress">2. Phase 별 Progress</a></li>
+  <li><a href="#phase-1-2-초기-8-api-bw-model">Phase 1-2: 초기 8-API BW model</a></li>
+  <li><a href="#phase-3-17-apis-9-new">Phase 3: 17 APIs (+9 NEW)</a></li>
+  <li><a href="#phase-4-real-co-run-validation-fail">Phase 4: Real co-run validation (FAIL)</a></li>
+  <li><a href="#phase-5a-emon-aggregate-bw-bw-saturation-발견">Phase 5a: emon aggregate BW (BW saturation 발견)</a></li>
+  <li><a href="#phase-5b-bounded-bandit-cache-footprint-test">Phase 5b: Bounded Bandit (cache footprint test)</a></li>
+  <li><a href="#bias-structure-deep-dive-phase-5b-24">Bias structure deep-dive (Phase 5b §2.4)</a></li>
+  <li><a href="#phase-5c-saturation-refit-admin-emon">Phase 5c: Saturation refit (admin emon)</a></li>
+  <li><a href="#phase-6-self_bw-aware-correction-model">Phase 6: self_BW-aware correction model</a></li>
+<li><a href="#3-headline-findings">3. Headline Findings</a></li>
+  <li><a href="#31-pccs-source-obliviousness-가-production-에선-깨짐">3.1 PCCS source-obliviousness 가 production 에선 깨짐</a></li>
+  <li><a href="#32-cause-decomposition">3.2 Cause decomposition</a></li>
+  <li><a href="#33-bias-structure-production-formula-근거">3.3 Bias structure (production formula 근거)</a></li>
+  <li><a href="#34-memory-bw-saturates-aggressively-at-high-n">3.4 Memory BW saturates aggressively at high N</a></li>
+<li><a href="#4-production-recommendation">4. Production Recommendation</a></li>
+  <li><a href="#model-formula">Model formula</a></li>
+  <li><a href="#inputs-needed">Inputs needed</a></li>
+  <li><a href="#expected-accuracy">Expected accuracy</a></li>
+<li><a href="#5-limitations-future-work">5. Limitations + Future Work</a></li>
+  <li><a href="#51-sample-size-limits">5.1 Sample size limits</a></li>
+  <li><a href="#52-unexplained-70-of-bias">5.2 Unexplained ~70% of bias</a></li>
+  <li><a href="#53-other-future-directions">5.3 Other future directions</a></li>
+<li><a href="#6-per-phase-artifacts">6. Per-Phase Artifacts</a></li>
+<li><a href="#7-adr-architecture-decision-record">7. ADR (Architecture Decision Record)</a></li>
+</ul></nav>
+<main>
+<h1 id="bw-aware-latency-prediction-on-intel-lunar-lake-hybrid-cpu-final-report">BW-Aware Latency Prediction on Intel Lunar Lake Hybrid CPU — Final Report</h1>
+<p><strong>Date</strong>: 2026-05-28
+<strong>Project</strong>: <code>dev/260519_bw_aware_prediction/</code>
+<strong>Platform</strong>: Intel Core Ultra 7 256V (Lunar Lake), 4 P-core + 4 E-core, LPDDR5X-8533 peak 136.5 GB/s
+<strong>Period</strong>: 6 phases over 9 days</p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<h3 id="research-question">Research Question</h3>
+<blockquote>
+<p>Can pandas API latency under co-run contention be predicted using only bandwidth signals (no cache counters, no admin)? On Intel Lunar Lake hybrid CPU, what is the production-deployable accuracy?</p>
+</blockquote>
+<h3 id="headline-results">Headline Results</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Method</th>
+<th>MAPE</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 3</td>
+<td>Bandit-trained pccs_k3 (in-sample)</td>
+<td><strong>6.06%</strong></td>
+<td>clean synthetic contention</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td>Real co-run (no correction)</td>
+<td><strong>34.0%</strong></td>
+<td>reality check — Bandit overestimates</td>
+</tr>
+<tr>
+<td>Phase 5b</td>
+<td>Bounded Bandit (cache footprint match)</td>
+<td>26.3%</td>
+<td>cache = 30% of bias</td>
+</tr>
+<tr>
+<td>Phase 6</td>
+<td><strong>self_BW-aware correction (M5)</strong></td>
+<td><strong>18.5%</strong> ⭐</td>
+<td><strong>production-ready</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="production-ready-model-no-cache-no-admin">Production-ready model (no cache, no admin)</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">real_slowdown</span><span class="w"> </span><span class="err">≈</span><span class="w"> </span><span class="n">bandit_predicted</span><span class="w"> </span><span class="err">×</span><span class="w"> </span><span class="n">correction</span><span class="p">(</span><span class="n">victim_self_BW</span><span class="p">,</span><span class="w"> </span><span class="n">agg_BW</span><span class="p">,</span><span class="w"> </span><span class="n">pool_size</span><span class="p">)</span>
+
+<span class="n">where</span><span class="w"> </span><span class="n">correction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.77</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">0.0016</span><span class="w"> </span><span class="err">×</span><span class="w"> </span><span class="n">victim_self_BW</span>
+<span class="w">                       </span><span class="err">−</span><span class="w"> </span><span class="mf">0.0097</span><span class="w"> </span><span class="err">×</span><span class="w"> </span><span class="n">aggregate_self_BW</span>
+<span class="w">                       </span><span class="o">+</span><span class="w"> </span><span class="mf">0.066</span><span class="w"> </span><span class="err">×</span><span class="w"> </span><span class="n">pool_size</span>
+</code></pre></div>
+
+<p><strong>Mean LOO-API MAPE: 18.5%</strong> (Phase 4 의 34% → 18% 절반으로 감소).</p>
+<h3 id="headline-findings">Headline Findings</h3>
+<ol>
+<li><strong>PCCS source-obliviousness 가 깨짐</strong>: Bandit 과 real workload 가 같은 aggregate BW 에서도 다른 victim slowdown (Bandit overestimates ~2x).</li>
+<li><strong>Cache footprint 가 부분 cause</strong> (~30%), 나머지 ~70% 는 prefetcher / access pattern / uncore traffic 추정.</li>
+<li><strong>Memory BW saturates</strong> in multi-thread: 1 → 8 cores 에서 ratio 1.0 → 0.55.</li>
+<li><strong>Production model 정확도</strong>: cache counters 없이 self_BW + pool_size 만으로 18.5% — 충분히 actionable (scheduler decisions).</li>
+</ol>
+<hr />
+<h2 id="1-research-goals">1. Research Goals</h2>
+<p>원래 가설 (project start):</p>
+<blockquote>
+<p>Bandwidth 측정 (self_BW + external pressure) 만으로 각 pandas API 의 co-run latency 를 충분히 정확하게 예측할 수 있다.</p>
+</blockquote>
+<p>이 가설을 Intel Lunar Lake 의 hybrid CPU (P+E) 에서 검증.</p>
+<h3 id="why-this-matters">Why this matters</h3>
+<ul>
+<li>Hybrid CPU 의 scheduling 결정 (어떤 작업 P/E 코어로) 은 co-run contention 예측에 의존</li>
+<li>Cache miss counters 는 정확하지만 측정 overhead 큼 (특히 production)</li>
+<li>BW 측정 (RAPL DRAM, emon CAS) 만으로 가능하다면 lightweight production model 가능</li>
+</ul>
+<hr />
+<h2 id="2-phase-progress">2. Phase 별 Progress</h2>
+<h3 id="phase-1-2-8-api-bw-model">Phase 1-2: 초기 8-API BW model</h3>
+<ul>
+<li><strong>Setup</strong>: 8 pandas APIs × Bandit (synthetic stress), PCCS-style slowdown curve</li>
+<li><strong>Best</strong>: pccs_k2 (self_BW 2-region) <strong>12.26% MAPE</strong></li>
+<li><strong>Limit</strong>: self_BW range 좁음 (5-17 GB/s) → PCCS formula 16.98% FAIL</li>
+</ul>
+<h3 id="phase-3-17-apis-9-new">Phase 3: 17 APIs (+9 NEW)</h3>
+<ul>
+<li><strong>추가</strong>: <code>read_parquet_*</code> (IO), filter variants, groupby cardinality 3종, <code>merge_left_outer</code></li>
+<li><strong>새 발견</strong>:</li>
+<li><code>groupby_agg_int_key</code> self_BW = <strong>0.34 GB/s</strong> (200K hash in L2 cache, compute-bound)</li>
+<li><code>read_parquet</code> self_BW = 4-7 GB/s (decompress dominant, not pure IO)</li>
+<li><strong>Range 확장</strong>: 0.34 - 20.46 GB/s (50× wider on low end)</li>
+<li><strong>Best</strong>: pccs_k3 (self_BW 3-region) <strong>6.06% MAPE</strong> (LOO-API CV, in-sample 의 의미)</li>
+<li><strong>PCCS formula 회복</strong>: 16.98% → 11.02% (wider self_BW range 덕분)</li>
+</ul>
+<p>→ <a href="https://jeff8287.github.io/hybrid-bench-reports/PHASE3_REPORT.html">Phase 3 Report</a></p>
+<h3 id="phase-4-real-co-run-validation-fail">Phase 4: Real co-run validation (FAIL)</h3>
+<ul>
+<li><strong>Question</strong>: Bandit-trained model 이 real pandas workload 동시 실행에서 작동하는가?</li>
+<li><strong>Setup</strong>: 40 setups × 8-core parallel, 245 cells (homo / pair / hetero / sparse)</li>
+<li><strong>Result</strong>:</li>
+<li>60/245 retained (76% extrapolated past Phase 3 Bandit max BW)</li>
+<li>retained: <strong>mean 34% error</strong></li>
+<li>real_slowdown &lt; predicted_slowdown 일관 → Bandit overestimates by ~2x</li>
+<li><strong>VERDICT</strong>: INCONCLUSIVE 표면, directional <strong>FAIL</strong></li>
+</ul>
+<h3 id="phase-5a-emon-aggregate-bw-bw-saturation">Phase 5a: emon aggregate BW (BW saturation 발견)</h3>
+<ul>
+<li><strong>Setup</strong>: 8 setups × system-wide emon, real workload pool</li>
+<li><strong>결과 (5/8 OK)</strong>:</li>
+<li>N=2: ratio measured/predicted = <strong>0.99</strong> (no saturation)</li>
+<li>N=8: ratio = <strong>0.60</strong> (heavy saturation)</li>
+<li><strong>결론</strong>: Σ self_BW 가 1.67× overestimate at N=8</li>
+<li><strong>Corrected (measured BW 로 prediction)</strong>: 여전히 <strong>25.7%</strong> mean error → saturation 만으로는 해결 안 됨</li>
+</ul>
+<p>→ <a href="https://jeff8287.github.io/hybrid-bench-reports/PHASE4_REPORT.html">Phase 4+5a Report</a></p>
+<h3 id="phase-5b-bounded-bandit-cache-footprint-test">Phase 5b: Bounded Bandit (cache footprint test)</h3>
+<ul>
+<li><strong>Hypothesis</strong>: Bandit (200MB stream × 7 threads = 1.4GB) vs real (6MB × 7 = 42MB) 의 cache footprint 차이가 cause?</li>
+<li><strong>Setup</strong>: Phase 3 와 정확히 같은 protocol, Bandit ARR_BYTES = 200MB → <strong>6 MB</strong> (13h 41min sweep)</li>
+<li><strong>Result</strong>:</li>
+<li>Phase 4 60 cells re-predict with bounded curve: mean error 34% → <strong>26.3%</strong> (−7.7pp)</li>
+<li>305 non-idle cells: bandit_orig vs bandit_bounded 거의 동일 (ratio 0.93) — DRAM at K=K0 saturates regardless</li>
+<li><strong>결론</strong>: Cache footprint = <strong>부분 cause (~30%)</strong></li>
+<li><strong>나머지 ~70% bias</strong>: prefetcher? access pattern? uncore traffic?</li>
+</ul>
+<h3 id="bias-structure-deep-dive-phase-5b-24">Bias structure deep-dive (Phase 5b §2.4)</h3>
+<p>60 retained cells 의 bias 분석:</p>
+<p><strong>상수성</strong>:
+| 척도 | mean | CV |
+|---|---|---|
+| Additive (real - pred) | -0.754 | <strong>0.72</strong> (변동 큼) |
+| <strong>Multiplicative (real/pred)</strong> | <strong>0.66</strong> | <strong>0.22</strong> ★ |</p>
+<p>→ 첫 근사 <code>real ≈ pred × 0.66</code>.</p>
+<p><strong>Victim API 별 strong signal</strong>:
+- Compute-bound (<code>groupby_agg_int_key</code> self_BW 0.34): ratio <strong>0.28</strong>
+- BW-bound (<code>merge_inner_*</code>, <code>filter</code>): ratio <strong>0.71-0.81</strong>
+- → cache-bound API 에서 Bandit prediction 이 가장 큰 overestimate</p>
+<p>→ <a href="https://jeff8287.github.io/hybrid-bench-reports/PHASE5B_REPORT.html">Phase 5b Report</a></p>
+<h3 id="phase-5c-saturation-refit-admin-emon">Phase 5c: Saturation refit (admin emon)</h3>
+<ul>
+<li>7 새 setups 측정 (Phase 5a 5 + Phase 5c 7 = 12 OK)</li>
+<li>New saturation curve:
+  <code>ratio(N) = 1.28 / (1 + 0.19 × (N-1))</code>
+  N=1: 1.28 · N=4: 0.81 · N=8: 0.55 (이전 fit N=8: 0.65 → 더 강한 saturation)</li>
+<li>Setup 9 (8 × filter homo): ratio <strong>0.16</strong> — 극단 saturation (cache contention 으로 8 cores ≈ 1 core BW)</li>
+</ul>
+<h3 id="phase-6-self_bw-aware-correction-model">Phase 6: self_BW-aware correction model</h3>
+<ul>
+<li><strong>Approach</strong>: cache 측정 없이 self_BW + bandit_pred 만으로 correction model fit</li>
+<li>
+<p><strong>Models tested</strong> (LOO-API CV on 60 retained cells):
+  | Model | mean MAPE |
+  |---|---|
+  | M0 baseline (no correction) | 60.2% |
+  | M1 constant ratio | 20.3% |
+  | M2 linear in self_BW | 21.0% |
+  | M3 log(self_BW+1) | 20.8% |
+  | M4 logistic | 19.6% |
+  | <strong>M5 multivariate</strong> | <strong>18.5%</strong> ⭐ |</p>
+</li>
+<li>
+<p><strong>M5 formula</strong> (production):
+  <code>ratio = 0.7711 + 0.0016 × victim_self_BW
+                 − 0.0097 × aggregate_self_BW
+                 + 0.0662 × pool_size</code></p>
+</li>
+<li>
+<p><strong>245 cells direct regression</strong> (saturation 적용): 37.8% — 60 cells 보다 worse</p>
+</li>
+<li><strong>Hybrid (saturation + Bandit + correction)</strong>: 57.5% — oversaturation noise → 더 worse</li>
+</ul>
+<p>→ <strong>60 cells M5 correction = final champion</strong></p>
+<hr />
+<h2 id="3-headline-findings">3. Headline Findings</h2>
+<h3 id="31-pccs-source-obliviousness-production">3.1 PCCS source-obliviousness 가 production 에선 깨짐</h3>
+<p>원 가정 (Wang et al. MICRO'21): aggregate external BW 가 같으면 contention source 와 무관하게 victim slowdown 같음.</p>
+<p>Reality (Phase 4+5a): <strong>Same aggregate BW (measured) 라도 Bandit vs real workload 가 ~25-35% 다른 slowdown</strong>.</p>
+<h3 id="32-cause-decomposition">3.2 Cause decomposition</h3>
+<table>
+<thead>
+<tr>
+<th>Cause</th>
+<th>기여</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Σ self_BW overestimate</strong> (linear sum 가정)</td>
+<td>~10pp</td>
+<td>Phase 5a/5c saturation measurement</td>
+</tr>
+<tr>
+<td><strong>Cache footprint mismatch</strong> (1.4GB vs 42MB)</td>
+<td>~8pp</td>
+<td>Phase 5b bounded Bandit experiment</td>
+</tr>
+<tr>
+<td><strong>나머지 unknown</strong>: prefetcher / access pattern / uncore</td>
+<td>~16-18pp</td>
+<td>residual after above</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-bias-structure-production-formula">3.3 Bias structure (production formula 근거)</h3>
+<ul>
+<li><strong>Multiplicative form</strong> 이 additive 보다 일관 (CV 0.22 vs 0.72)</li>
+<li><strong>Compute-bound API</strong> (low self_BW) 가 가장 큰 overestimate</li>
+<li><strong>Pool size</strong> 클수록 약간 더 overestimate (saturation 효과 가중)</li>
+</ul>
+<h3 id="34-memory-bw-saturates-aggressively-at-high-n">3.4 Memory BW saturates aggressively at high N</h3>
+<div class="codehilite"><pre><span></span><code>N=1: ratio 1.0   (no saturation)
+N=4: ratio 0.81  (mild)
+N=8: ratio 0.55  (heavy)
+</code></pre></div>
+
+<p>이론적 LPDDR5X peak 136.5 GB/s → 실측 sustained ≈ 45-50 GB/s.</p>
+<hr />
+<h2 id="4-production-recommendation">4. Production Recommendation</h2>
+<h3 id="model-formula">Model formula</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict_real_slowdown</span><span class="p">(</span><span class="n">victim_api</span><span class="p">,</span> <span class="n">victim_core_label</span><span class="p">,</span>
+                          <span class="n">generators_list</span><span class="p">,</span>
+                          <span class="n">phase3_bandit_curve</span><span class="p">,</span> <span class="n">phase3_self_bw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    victim_api: pandas API name (one of 17)</span>
+<span class="sd">    victim_core_label: &quot;P1&quot; or &quot;E1&quot;</span>
+<span class="sd">    generators_list: [(api_name, core_label), ...]</span>
+<span class="sd">    Returns: predicted real_slowdown</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Phase 3 measured values</span>
+    <span class="n">sbw_v</span> <span class="o">=</span> <span class="n">phase3_self_bw</span><span class="p">[(</span><span class="n">victim_api</span><span class="p">,</span> <span class="n">victim_core_label</span><span class="p">)]</span>
+
+    <span class="c1"># Aggregate Σ self_BW (no saturation needed - small bias if N&lt;5)</span>
+    <span class="n">agg_bw</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">phase3_self_bw</span><span class="p">[(</span><span class="n">g</span><span class="p">,</span> <span class="n">c</span><span class="p">)]</span> <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">generators_list</span><span class="p">)</span>
+
+    <span class="n">pool_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">generators_list</span><span class="p">)</span>
+
+    <span class="c1"># Phase 3 Bandit prediction</span>
+    <span class="n">bandit_pred</span> <span class="o">=</span> <span class="n">phase3_bandit_curve</span><span class="p">[(</span><span class="n">victim_api</span><span class="p">,</span> <span class="n">victim_core_label</span><span class="p">)](</span><span class="n">agg_bw</span><span class="p">)</span>
+
+    <span class="c1"># Phase 6 M5 correction</span>
+    <span class="n">correction</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.7711</span>
+                  <span class="o">+</span> <span class="mf">0.0016</span> <span class="o">*</span> <span class="n">sbw_v</span>
+                  <span class="o">-</span> <span class="mf">0.0097</span> <span class="o">*</span> <span class="n">agg_bw</span>
+                  <span class="o">+</span> <span class="mf">0.0662</span> <span class="o">*</span> <span class="n">pool_size</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bandit_pred</span> <span class="o">*</span> <span class="n">correction</span>
+</code></pre></div>
+
+<h3 id="inputs-needed">Inputs needed</h3>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Source</th>
+<th>One-time cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>self_BW(api, core)</code></td>
+<td>Phase 3 emon (admin, 17 APIs × 2 cores)</td>
+<td>~3 hours admin shell</td>
+</tr>
+<tr>
+<td><code>bandit_curve(api, core)</code></td>
+<td>Phase 3 Bandit sweep</td>
+<td>~18 hours (no admin)</td>
+</tr>
+<tr>
+<td>Per-prediction: pool composition</td>
+<td>runtime info</td>
+<td>free</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No cache counters required</strong>. <strong>No admin at prediction time</strong>.</p>
+<h3 id="expected-accuracy">Expected accuracy</h3>
+<ul>
+<li>Mean MAPE 18-20% on real co-runs (LOO-API CV)</li>
+<li>Direction: <strong>conservative (over-estimate)</strong> — safer for scheduling decisions</li>
+<li>Worst case: compute-bound APIs (<code>groupby_agg_int_key</code>) up to 70% error → scheduler should treat as "safe to co-locate"</li>
+<li>Best case: BW-bound APIs (<code>merge_inner_*</code>, <code>filter</code>) ~10% error</li>
+</ul>
+<hr />
+<h2 id="5-limitations-future-work">5. Limitations + Future Work</h2>
+<h3 id="51-sample-size-limits">5.1 Sample size limits</h3>
+<p>60 retained Phase 4 cells 가 model fit 의 한계.
+- 245 cells 다 사용 시 saturation noise 증가 → MAPE 더 안 좋음 (37%)
+- 더 많은 setups 필요 → next iteration</p>
+<h3 id="52-unexplained-70-of-bias">5.2 Unexplained ~70% of bias</h3>
+<p>Phase 4+5a+5b+5c 후에도 가장 큰 cause 미상:</p>
+<table>
+<thead>
+<tr>
+<th>Candidate</th>
+<th>Test cost</th>
+<th>Expected signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Memory access pattern (stream vs random)</td>
+<td>Mid (new Bandit kernel)</td>
+<td>high</td>
+</tr>
+<tr>
+<td>HW prefetcher behavior</td>
+<td>Low (BIOS disable + 1 setup)</td>
+<td>high</td>
+</tr>
+<tr>
+<td>Uncore (ring) traffic</td>
+<td>Mid (admin emon counters)</td>
+<td>mid</td>
+</tr>
+<tr>
+<td>TLB / cache associativity</td>
+<td>Mid (admin emon)</td>
+<td>low-mid</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-other-future-directions">5.3 Other future directions</h3>
+<ul>
+<li><strong>API expansion</strong>: 17 → 30 APIs (broader generalization)</li>
+<li><strong>SF=2 model</strong>: Phase 3 SF=2 MAPE 14% (vs SF=1 6%) — working set effect 별도 모델</li>
+<li><strong>Production deployment</strong>: real scheduler integration + measurement loop</li>
+</ul>
+<hr />
+<h2 id="6-per-phase-artifacts">6. Per-Phase Artifacts</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>URL</th>
+<th>Commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 2 (8 APIs initial)</td>
+<td>https://jeff8287.github.io/hybrid-bench-reports/REPORT.html</td>
+<td>10941d5</td>
+</tr>
+<tr>
+<td>Phase 3 (17 APIs, 6.06%)</td>
+<td>https://jeff8287.github.io/hybrid-bench-reports/PHASE3_REPORT.html</td>
+<td>c9c0453</td>
+</tr>
+<tr>
+<td>Phase 4+5a (source-oblivious FAIL)</td>
+<td>https://jeff8287.github.io/hybrid-bench-reports/PHASE4_REPORT.html</td>
+<td>db0ed82</td>
+</tr>
+<tr>
+<td>Phase 5b (bounded Bandit + bias)</td>
+<td>https://jeff8287.github.io/hybrid-bench-reports/PHASE5B_REPORT.html</td>
+<td>c646120</td>
+</tr>
+<tr>
+<td>Phase 5c + 6 hybrid</td>
+<td>(this report)</td>
+<td>bb402a1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-adr-architecture-decision-record">7. ADR (Architecture Decision Record)</h2>
+<p><strong>Decision</strong>: Adopt Phase 6 M5 correction model (60 retained cells, multivariate linear) for production prediction.</p>
+<p><strong>Drivers</strong>:
+- Best mean LOO-API MAPE among tested approaches (18.5%)
+- Uses only self_BW (no cache counters, no admin at runtime)
+- Simple closed-form (4-term linear) — implementable in any scheduler
+- Direction conservative (overestimate) — safe scheduling fallback</p>
+<p><strong>Alternatives rejected</strong>:
+- Direct regression on 245 cells (37.8%) — saturation noise
+- Hybrid saturation + Bandit + correction (57.5%) — oversaturation noise
+- Phase 3 model alone (6% in-sample, 34% real) — overestimates 2×
+- Bounded Bandit + no correction (26%) — partial fix, still high error</p>
+<p><strong>Consequences</strong>:
+- (+) Production-ready without admin or cache counters
+- (+) Documented bias direction (conservative)
+- (−) ~70% of bias unexplained — future research opportunity
+- (−) Phase 3's "6.06%" headline is in-sample only, real-world ~18-20%</p>
+<p><strong>Follow-ups</strong>:
+- Random-access Bandit kernel (memory pattern test)
+- Prefetcher disable (BIOS) for 1 control setup
+- Uncore counter sweep (admin emon)
+- Real production deployment validation</p>
+<hr />
+<p><em>Final report. Project closed at commit <code>bb402a1</code>.</em></p>
+</main>
+<footer>
+  <p>본 리포트는 markdown → HTML 자동 변환 + GitHub Gist 배포 도구로 생성되었습니다.</p>
+  <p>Generated by <code>_scripts/publish_report_html.py</code></p>
+</footer>
+</div>
+</body>
+</html>
